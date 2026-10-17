@@ -20,10 +20,30 @@ import { useSiteData } from "./store";
 // gets dragged into. Consistency is what makes it read as sleek rather than busy.
 const EASE = [0.16, 1, 0.3, 1] as const;
 
+const ALL = "semua";
+
+/** "Semua" tab first: every affiliate product once (shared skincare items aren't repeated). */
+function withAllTab(routines: Routine[]): Routine[] {
+  const seen = new Set<string>();
+  const products = routines.flatMap((r) => r.products).filter((p) => {
+    const key = p.core ? "core:" + p.step.toLowerCase() : p.id;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  if (!products.length) return routines;
+  return [
+    { id: ALL, tab: "Semua", title: "Semua produk saya", when: "Skincare & makeup",
+      intro: "Semua yang saya pakai dan recommend, dalam satu tempat.", tip: "", post: "", products },
+    ...routines,
+  ];
+}
+
 export default function Cherry() {
   const { data } = useSiteData();
-  const { routines, reviews } = data;
-  const [active, setActive] = useState(routines[0]?.id);
+  const { reviews } = data;
+  const routines = withAllTab(data.routines);
+  const [active, setActive] = useState(ALL);
   const routine = routines.find((r) => r.id === active) ?? routines[0];
   const shown = reviews.filter((r) => r.visible && r.consent);
 
@@ -32,7 +52,7 @@ export default function Cherry() {
       <div className="grain min-h-dvh overflow-x-clip">
         <DraftBanner />
         <Header />
-        {routine && <Hero routine={routine} />}
+        {routine && <Hero routine={routine} routines={routines} open={(id) => { setActive(id); document.getElementById("rutin")?.scrollIntoView(); }} />}
         <Ribbon />
         {routine && <Routines routines={routines} routine={routine} setActive={setActive} />}
         <FromThreads />
@@ -99,7 +119,7 @@ function Header() {
         cherrryyyii
       </a>
       <nav className="flex items-center gap-2 text-sm font-medium sm:gap-5">
-        <a href="#rutin" className="hidden hover:text-cherry sm:inline">Rutin</a>
+        <a href="#rutin" className="hidden hover:text-cherry sm:inline">Produk</a>
         <a href="#about" className="hidden hover:text-cherry sm:inline">Tentang</a>
         <a href={THREADS} target="_blank" rel="noopener" className="rounded-full border border-ink/15 px-3.5 py-1.5 hover:border-cherry hover:text-cherry">
           Threads ↗
@@ -166,37 +186,55 @@ function CountUp({ to, className = "" }: { to: number; className?: string }) {
 
 /* ---------- hero ---------- */
 
-function Hero({ routine }: { routine: Routine }) {
+function Hero({ routine, routines, open }: { routine: Routine; routines: Routine[]; open: (id: string) => void }) {
   const ref = useRef<HTMLElement>(null);
   const reduce = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
   const shelfY = useTransform(scrollYProgress, [0, 1], [0, reduce ? 0 : -90]);
   const textY = useTransform(scrollYProgress, [0, 1], [0, reduce ? 0 : 60]);
+  const all = routines.find((r) => r.id === ALL);
+  const sections = routines.filter((r) => r.id !== ALL);
 
   return (
     <section ref={ref} className="wrap relative grid gap-10 pb-16 pt-6 md:min-h-[calc(100dvh-7rem)] md:grid-cols-[1.1fr_1fr] md:items-center md:gap-16 md:pt-8">
       <HazeBlobs />
       <motion.div style={{ y: textY }} className="relative">
         <motion.p initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}
-          className="mb-5 inline-flex items-center gap-2 rounded-full bg-blush px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-cherry">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-cherry" /> Musim jerebu · Okt 2026
+          className="mb-6 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-cherry">
+          <span>Katalog Cherry</span>
+          <motion.span className="h-px w-10 origin-left bg-cherry" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: 0.4, duration: 1 }} />
+          <span className="text-muted">Edisi Okt 2026</span>
         </motion.p>
-        <h1 className="font-display text-[clamp(3rem,10.5vw,9.5rem)] leading-[0.92] tracking-[-0.03em]">
-          <MaskLines delay={0.25} lines={["Jerebu", "dah sampai.", <span key="c" className="text-cherry">Ni rutin saya.</span>]} />
+        <h1 className="font-display text-[clamp(3rem,6vw,8.5rem)] leading-[0.92] tracking-[-0.03em]">
+          <MaskLines delay={0.25} lines={["Selamat datang", "ke rak", <span key="c" className="text-cherry">saya.</span>]} />
         </h1>
         <motion.p initial={{ opacity: 0, y: 14, filter: "blur(8px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} transition={{ delay: 0.75 }}
           className="mt-6 max-w-md text-[17px] leading-relaxed text-muted xl:max-w-lg xl:text-xl">
-          Pilih rutin ikut jenis kulit, ikut step satu per satu, terus checkout kat Shopee. Tak payah scroll reply lagi.
+          Ni semua skincare dan makeup yang saya pakai setakat ni. Yang betul-betul saya guna je, bukan sekadar cuba sekali.
+          Jumpa yang berkenan? Terus ke Shopee.
         </motion.p>
-        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }} className="mt-8 flex flex-wrap items-center gap-4">
-          <a href="#rutin" className="group inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3.5 font-semibold text-milk transition-colors hover:bg-cherry">
-            Pilih rutin
+
+        {/* catalogue contents: one line per section, like the index page of a magazine */}
+        <motion.ol initial="hidden" animate="show" transition={{ staggerChildren: 0.07, delayChildren: 0.95 }}
+          className="mt-8 max-w-lg border-t border-ink/15">
+          {sections.map((r, i) => (
+            <motion.li key={r.id} variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }} transition={{ duration: 0.7, ease: EASE }}>
+              <button onClick={() => open(r.id)}
+                className="group flex w-full items-baseline gap-4 border-b border-ink/15 py-3 text-left transition-colors hover:text-cherry">
+                <span className="w-6 font-display text-sm text-muted group-hover:text-cherry">{String(i + 1).padStart(2, "0")}</span>
+                <span className="flex-1 font-semibold">{r.tab}</span>
+                <span className="text-sm text-muted">{r.products.length} produk</span>
+                <span className="transition-transform duration-500 ease-out-expo group-hover:translate-x-1">→</span>
+              </button>
+            </motion.li>
+          ))}
+        </motion.ol>
+
+        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.2 }} className="mt-8">
+          <button onClick={() => open(ALL)} className="group inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3.5 font-semibold text-milk transition-colors hover:bg-cherry">
+            Buka katalog{all ? ` · ${all.products.length} produk` : ""}
             <span className="transition-transform duration-500 ease-out-expo group-hover:translate-y-1">↓</span>
-          </a>
-          <div className="text-sm leading-tight text-muted">
-            <CountUp to={1533} className="block font-display text-3xl text-ink" />
-            likes untuk satu post makeup
-          </div>
+          </button>
         </motion.div>
       </motion.div>
       <motion.div style={{ y: shelfY }} className="relative">
@@ -231,7 +269,7 @@ function Shelf({ routine }: { routine: Routine }) {
       <div className="absolute inset-x-6 bottom-[22%] flex items-end justify-center gap-[3%]">
         <AnimatePresence mode="popLayout">
           {routine.products.map((p, i) => (
-            <motion.div key={routine.id + p.id} className="relative w-[17%] max-w-24 xl:max-w-36"
+            <motion.div key={routine.id + p.id} className="relative max-w-24 xl:max-w-36" style={{ width: `${Math.min(17, 92 / routine.products.length - 1.5)}%` }}
               initial={{ y: -260, rotate: i % 2 ? 10 : -10, opacity: 0 }}
               animate={{ y: 0, rotate: 0, opacity: 1 }}
               exit={{ y: -30, opacity: 0, filter: "blur(6px)", transition: { duration: 0.35, delay: i * 0.03 } }}
@@ -277,7 +315,7 @@ function Ribbon() {
   const reduce = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
   const x = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["0%", "-35%"]);
-  const words = ["hydrate betul betul", "3 step je", "musim jerebu", "tak payah scroll reply", "skin barrier dulu", "weekend baru all out"];
+  const words = ["Cleanser", "Toner mist", "Serum", "Moisturiser", "Sunscreen", "Skin tint", "Blusher", "Lip tint"];
   return (
     <div ref={ref} aria-hidden className="relative -rotate-2 overflow-hidden bg-cherry py-4 text-milk">
       <motion.div style={{ x }} className="flex w-max gap-8 whitespace-nowrap font-display text-3xl sm:text-4xl">
@@ -306,9 +344,9 @@ function Routines({ routines, routine, setActive }: { routines: Routine[]; routi
   const fit = routines.length <= 4;
   return (
     <section id="rutin" className="wrap scroll-mt-4 pb-20 pt-24">
-      <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-cherry">Rutin</p>
+      <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-cherry">Produk</p>
       <h2 className="max-w-3xl font-display text-[clamp(2.2rem,6vw,5.5rem)] leading-[0.98] tracking-[-0.02em]">
-        <RevealWords text="Pilih kulit awak. Ikut step, terus beli." />
+        <RevealWords text="Produk yang saya guna setakat ni." />
       </h2>
 
       {/* sticky tab bar: sits under the thumb while scrolling cards */}
@@ -338,8 +376,8 @@ function Routines({ routines, routine, setActive }: { routines: Routine[]; routi
                 </motion.h3>
                 <motion.blockquote variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0, transition: { delay: 0.1 } }, exit: { opacity: 0 } }}
                   className="mt-2 max-w-xl text-lg text-muted">
-                  “{routine.intro}”{" "}
-                  <a href={routine.post} target="_blank" rel="noopener" className="whitespace-nowrap text-sm font-semibold text-cherry underline-offset-4 hover:underline">post asal ↗</a>
+                  {routine.post ? `“${routine.intro}”` : routine.intro}{" "}
+                  {routine.post && <a href={routine.post} target="_blank" rel="noopener" className="whitespace-nowrap text-sm font-semibold text-cherry underline-offset-4 hover:underline">post asal ↗</a>}
                 </motion.blockquote>
               </div>
               <motion.span variants={{ hidden: { opacity: 0, scale: 0.8 }, show: { opacity: 1, scale: 1 }, exit: { opacity: 0 } }}
@@ -350,15 +388,15 @@ function Routines({ routines, routine, setActive }: { routines: Routine[]; routi
 
             <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
               {routine.products.map((p, i) => (
-                <StepCard key={p.id} p={p} i={i} />
+                <StepCard key={p.id} p={p} i={i} label={routine.id === ALL ? p.step : `Langkah ${i + 1} · ${p.step}`} />
               ))}
             </ol>
 
-            <motion.aside variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { delay: 0.5, duration: 0.8, ease: EASE } }, exit: { opacity: 0 } }}
+            {routine.tip && <motion.aside variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { delay: 0.5, duration: 0.8, ease: EASE } }, exit: { opacity: 0 } }}
               className="mt-6 flex items-start gap-3 rounded-3xl bg-stem p-5 text-milk sm:p-6">
               <span className="font-display text-2xl leading-none">✿</span>
               <p className="text-[15px] leading-relaxed"><b className="font-semibold">Tip Cherry</b> <span className="text-milk/60">(draf)</span>: {routine.tip}</p>
-            </motion.aside>
+            </motion.aside>}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -366,7 +404,7 @@ function Routines({ routines, routine, setActive }: { routines: Routine[]; routi
   );
 }
 
-function StepCard({ p, i }: { p: Product; i: number }) {
+function StepCard({ p, i, label }: { p: Product; i: number; label: string }) {
   return (
     <motion.li custom={i} variants={cardVariants}
       className="group relative flex flex-col overflow-hidden rounded-3xl border border-ink/10 bg-white/70 p-5 shadow-[0_1px_0_rgba(36,22,26,.04)] transition-shadow duration-500 hover:shadow-[0_24px_48px_-24px_rgba(184,29,56,.35)]">
@@ -385,7 +423,7 @@ function StepCard({ p, i }: { p: Product; i: number }) {
         <span className="absolute bottom-2 right-3 text-[10px] uppercase tracking-[0.14em] text-muted/70">foto produk nanti</span>
       </div>
 
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">Langkah {i + 1} · {p.step}</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">{label}</p>
       <h4 className="mt-1 font-display text-2xl leading-tight">
         {p.brand ?? <span className="text-muted/60">Jenama</span>}{" "}
         <span className="text-muted/60">{p.name ?? "— nama produk"}</span>
@@ -553,12 +591,12 @@ function FloatingNav() {
     <motion.a href={past ? "#" : "#rutin"} onClick={(e) => { if (past) { e.preventDefault(); scrollTo({ top: 0, behavior: "smooth" }); } }}
       initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 1.4, type: "spring", stiffness: 260, damping: 22 }}
       className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-50 flex h-12 items-center gap-2 overflow-hidden rounded-full bg-ink pl-4 pr-5 text-sm font-semibold text-milk shadow-[0_12px_30px_-8px_rgba(36,22,26,.55)] hover:bg-cherry sm:right-6"
-      aria-label={past ? "Kembali ke atas" : "Pergi ke rutin"}>
+      aria-label={past ? "Kembali ke atas" : "Pergi ke produk"}>
       <AnimatePresence mode="popLayout" initial={false}>
         <motion.span key={past ? "up" : "down"} initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -24, opacity: 0 }}
           transition={{ duration: 0.35, ease: EASE }} className="flex items-center gap-2">
           <span className="grid h-6 w-6 place-items-center rounded-full bg-milk/15">{past ? "↑" : "↓"}</span>
-          {past ? "Atas" : "Pilih rutin"}
+          {past ? "Atas" : "Lihat produk"}
         </motion.span>
       </AnimatePresence>
     </motion.a>
