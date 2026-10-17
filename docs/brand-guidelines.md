@@ -43,7 +43,7 @@ Her quotes are used verbatim, stretched letters included. New copy that sounds l
 ## Motion
 - **One curve everywhere:** `cubic-bezier(0.16, 1, 0.3, 1)` (expo-out).
 - **Moves used:** masked line reveals, words un-blurring, a stem that draws on, a spring "drop" for bottles, a clip-path wipe on cards, a fill wipe on buttons, and a scroll-linked ribbon and parallax.
-- **Reduced motion:** all of it is switched off under `prefers-reduced-motion`. `MotionConfig reducedMotion="user"` handles this, plus CSS guards.
+- **Reduced motion:** under `prefers-reduced-motion`, `MotionConfig reducedMotion="user"` and CSS guards switch off movement, parallax and grain. Fades, blur reveals and clip-path wipes still play.
 
 ## Imagery
 - The illustrated bottles are placeholders.

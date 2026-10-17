@@ -346,7 +346,7 @@ function Routines({ active, setActive }: { active: string; setActive: (id: strin
             <motion.aside variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { delay: 0.5, duration: 0.8, ease: EASE } }, exit: { opacity: 0 } }}
               className="mt-6 flex items-start gap-3 rounded-3xl bg-stem p-5 text-milk sm:p-6">
               <span className="font-display text-2xl leading-none">✿</span>
-              <p className="text-[15px] leading-relaxed"><b className="font-semibold">Tip Cherry:</b> {routine.tip}</p>
+              <p className="text-[15px] leading-relaxed"><b className="font-semibold">Tip Cherry</b> <span className="text-milk/60">(draf)</span>: {routine.tip}</p>
             </motion.aside>
           </motion.div>
         </AnimatePresence>
@@ -362,7 +362,7 @@ function StepCard({ p, i }: { p: Product; i: number }) {
       <div className="flex items-start justify-between">
         <span className="font-display text-5xl leading-none text-cherry/90">{String(i + 1).padStart(2, "0")}</span>
         <div className="flex flex-wrap justify-end gap-1.5">
-          {p.core && <span className="rounded-full bg-stem/10 px-2.5 py-1 text-[11px] font-semibold text-stem">Semua jenis kulit</span>}
+          {p.core && <span className="rounded-full bg-stem/10 px-2.5 py-1 text-[11px] font-semibold text-stem">Kering &amp; berminyak</span>}
           {p.shade && <span className="rounded-full bg-blush px-2.5 py-1 text-[11px] font-semibold text-cherry">{p.shade}</span>}
         </div>
       </div>
@@ -401,7 +401,7 @@ function FromThreads() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-blush/70">Dari Threads</p>
         <h2 className="max-w-2xl font-display text-[clamp(2.2rem,7vw,4rem)] leading-[0.98] tracking-[-0.02em]">
-          <RevealWords text="Rutin yang korang dah save." />
+          <RevealWords text="Post yang korang dah like." />
         </h2>
         <div className="no-scrollbar -mx-4 mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:px-0 lg:grid-cols-4">
           {posts.map((p, i) => (
