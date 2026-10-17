@@ -43,10 +43,15 @@ body { background: var(--color-milk); color: var(--color-ink); font-family: var(
   60% { transform: translate(-2%, -1%); } 80% { transform: translate(3%, 3%); } 100% { transform: translate(0, 0); }
 }
 
+/* Red ribbon: runs on its own at a constant speed */
+.ribbon { animation: ribbon 45s linear infinite; }
+@keyframes ribbon { to { transform: translateX(-50%); } }
+
 .no-scrollbar { scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .grain::after { animation: none; }
+  .ribbon { animation: none; }
 }

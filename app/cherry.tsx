@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import {
   AnimatePresence,
@@ -206,12 +207,11 @@ function Hero({ routine, routines, open }: { routine: Routine; routines: Routine
           <span className="text-muted">Edisi Okt 2026</span>
         </motion.p>
         <h1 className="font-display text-[clamp(3rem,6vw,8.5rem)] leading-[0.92] tracking-[-0.03em]">
-          <MaskLines delay={0.25} lines={["Selamat datang", "ke rak", <span key="c" className="text-cherry">saya.</span>]} />
+          <MaskLines delay={0.25} lines={["Skincare &", "makeup yang", <span key="c" className="text-cherry">saya pakai.</span>]} />
         </h1>
         <motion.p initial={{ opacity: 0, y: 14, filter: "blur(8px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} transition={{ delay: 0.75 }}
           className="mt-6 max-w-md text-[17px] leading-relaxed text-muted xl:max-w-lg xl:text-xl">
-          Ni semua skincare dan makeup yang saya pakai setakat ni. Yang betul-betul saya guna je, bukan sekadar cuba sekali.
-          Jumpa yang berkenan? Terus ke Shopee.
+          Semua produk dari post Threads saya, dikumpul dalam satu tempat. Setiap satu ada link Shopee.
         </motion.p>
 
         {/* catalogue contents: one line per section, like the index page of a magazine */}
@@ -257,34 +257,39 @@ function HazeBlobs() {
 
 function Shelf({ routine }: { routine: Routine }) {
   return (
-    <div className="relative aspect-[5/4] w-full rounded-[2rem] md:aspect-[4/4] xl:aspect-[5/4] bg-gradient-to-b from-blush to-haze/70 p-6">
-      <div className="absolute left-6 top-5 text-xs font-semibold uppercase tracking-[0.14em] text-muted">Rak Cherry</div>
-      <AnimatePresence mode="wait">
-        <motion.div key={routine.id + "-label"} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.4 }} className="absolute right-6 top-5 font-display text-sm text-cherry">
-          {routine.tab}
-        </motion.div>
-      </AnimatePresence>
-      {/* bottles stand on the shelf line */}
-      <div className="absolute inset-x-6 bottom-[22%] flex items-end justify-center gap-[3%]">
-        <AnimatePresence mode="popLayout">
-          {routine.products.map((p, i) => (
-            <motion.div key={routine.id + p.id} className="relative max-w-24 xl:max-w-36" style={{ width: `${Math.min(17, 92 / routine.products.length - 1.5)}%` }}
-              initial={{ y: -260, rotate: i % 2 ? 10 : -10, opacity: 0 }}
-              animate={{ y: 0, rotate: 0, opacity: 1 }}
-              exit={{ y: -30, opacity: 0, filter: "blur(6px)", transition: { duration: 0.35, delay: i * 0.03 } }}
-              transition={{ type: "spring", stiffness: 260, damping: 13, mass: 0.9, delay: 0.35 + i * 0.09, opacity: { duration: 0.2, delay: 0.35 + i * 0.09 } }}>
-              <Bottle pack={p.pack} tint={p.tint} label={p.step} />
-            </motion.div>
-          ))}
+    <motion.figure
+      initial={{ clipPath: "inset(12% 12% 12% 12% round 2rem)", opacity: 0 }}
+      animate={{ clipPath: "inset(0% 0% 0% 0% round 2rem)", opacity: 1 }}
+      transition={{ duration: 1.4, ease: EASE, delay: 0.3 }}
+      className="relative aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-blush sm:aspect-[5/4] md:aspect-[4/5] xl:aspect-[5/4]">
+      {/* slow push-in, like a camera drifting toward the shelf */}
+      <motion.div className="absolute inset-0" initial={{ scale: 1.25 }} animate={{ scale: 1.05 }} transition={{ duration: 6, ease: EASE, delay: 0.3 }}>
+        <Image src="/shelf.jpg" alt="Produk skincare dan makeup atas latar pink" fill priority sizes="(min-width: 768px) 50vw, 100vw" className="object-cover" />
+      </motion.div>
+      <div className="absolute inset-0 bg-gradient-to-t from-ink/55 via-transparent to-ink/10" />
+
+      <figcaption className="absolute inset-x-0 top-0 flex items-start justify-between p-5 text-milk sm:p-6">
+        <span className="rounded-full bg-milk/85 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink backdrop-blur">Rak Cherry</span>
+        <AnimatePresence mode="wait">
+          <motion.span key={routine.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.4 }}
+            className="rounded-full bg-cherry px-3 py-1 font-display text-sm">
+            {routine.tab}
+          </motion.span>
         </AnimatePresence>
+      </figcaption>
+
+      <div className="absolute inset-x-0 bottom-0 flex items-end justify-between p-5 text-milk sm:p-6">
+        <AnimatePresence mode="wait">
+          <motion.div key={routine.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.5, ease: EASE }}>
+            <p className="font-display text-5xl leading-none">{routine.products.length}</p>
+            <p className="mt-1 text-sm text-milk/85">produk · {routine.when}</p>
+          </motion.div>
+        </AnimatePresence>
+        {/* ponytail: stock mockup photo; swap for Cherry's own shelf photo */}
+        <a href="https://unsplash.com/photos/pink-cosmetic-containers-and-makeup-brush-dMjkQJs58uo" target="_blank" rel="noopener"
+          className="text-[10px] text-milk/70 hover:text-milk">Foto contoh: pmv chamara / Unsplash</a>
       </div>
-      <div className="absolute inset-x-4 bottom-[18%] h-3 rounded-full bg-ink/85 shadow-[0_14px_24px_-10px_rgba(36,22,26,.45)]" />
-      <div className="absolute bottom-6 left-6 right-6 flex justify-between text-[11px] text-muted">
-        <span>{routine.products.length} produk</span>
-        <span>{routine.when}</span>
-      </div>
-    </div>
+    </motion.figure>
   );
 }
 
@@ -311,18 +316,19 @@ function Bottle({ pack, tint, label }: { pack: Pack; tint: string; label: string
 /* ---------- ribbon ---------- */
 
 function Ribbon() {
-  const ref = useRef<HTMLDivElement>(null);
-  const reduce = useReducedMotion();
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
-  const x = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["0%", "-35%"]);
   const words = ["Cleanser", "Toner mist", "Serum", "Moisturiser", "Sunscreen", "Skin tint", "Blusher", "Lip tint"];
+  // Two identical halves slide -50% forever, so the seam never shows.
   return (
-    <div ref={ref} aria-hidden className="relative -rotate-2 overflow-hidden bg-cherry py-4 text-milk">
-      <motion.div style={{ x }} className="flex w-max gap-8 whitespace-nowrap font-display text-3xl sm:text-4xl">
-        {[...words, ...words, ...words].map((w, i) => (
-          <span key={i} className="flex items-center gap-8">{w}<span className="text-xl text-milk/60">✿</span></span>
+    <div aria-hidden className="relative -rotate-2 overflow-hidden bg-cherry py-4 text-milk">
+      <div className="ribbon flex w-max whitespace-nowrap font-display text-3xl sm:text-4xl">
+        {[0, 1].map((half) => (
+          <div key={half} className="flex">
+            {[...words, ...words].map((w, i) => (
+              <span key={i} className="flex items-center gap-8 pr-8">{w}<span className="text-xl text-milk/60">✿</span></span>
+            ))}
+          </div>
         ))}
-      </motion.div>
+      </div>
     </div>
   );
 }
@@ -541,10 +547,18 @@ function FromThreads() {
   return (
     <section className="overflow-hidden bg-ink py-20 text-milk">
       <div className="wrap">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-blush/70">Dari Threads</p>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-blush/70">Jom connect</p>
         <h2 className="max-w-3xl font-display text-[clamp(2.2rem,6vw,5.5rem)] leading-[0.98] tracking-[-0.02em]">
-          <RevealWords text="Post yang korang dah like." />
+          <RevealWords text="Apa yang saya kongsi kat Threads." />
         </h2>
+        <div className="mt-6 flex flex-wrap items-center gap-4">
+          <a href={THREADS} target="_blank" rel="noopener"
+            className="group inline-flex items-center gap-2 rounded-full bg-milk px-5 py-3 font-semibold text-ink transition-colors hover:bg-blush">
+            Follow @cherrryyyii
+            <span className="transition-transform duration-500 ease-out-expo group-hover:translate-x-0.5 group-hover:-translate-y-0.5">↗</span>
+          </a>
+          <span className="text-sm text-milk/60">Rutin baru, soalan, review — semua kat sana dulu.</span>
+        </div>
       </div>
       <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 1, ease: EASE }}
         className="mt-10 [mask-image:linear-gradient(90deg,transparent,#000_6%,#000_94%,transparent)]">
