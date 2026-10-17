@@ -57,7 +57,7 @@ export default function Admin() {
         </nav>
       </header>
 
-      <main className="mx-auto max-w-3xl px-4 pt-6">
+      <main className="mx-auto max-w-5xl px-4 pt-6">
         <AnimatePresence mode="wait">
           <motion.div key={tab} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.35, ease: EASE }}>
             {tab === "Ringkasan" && <Overview data={data} reset={() => { if (confirm("Buang semua perubahan dan guna data asal?")) { reset(); setToast("Data asal dipulihkan"); } }} go={setTab} />}

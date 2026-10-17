@@ -14,6 +14,15 @@
 }
 
 html { scroll-behavior: smooth; }
+:root { --gutter: clamp(1rem, 4vw, 5rem); }
+
+/* Full-width container: stretches edge to edge, capped only on ultra-wide screens. */
+@utility wrap {
+  width: 100%;
+  max-width: 2200px;
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
 body { background: var(--color-milk); color: var(--color-ink); font-family: var(--font-figtree), system-ui, sans-serif; }
 ::selection { background: var(--color-cherry); color: var(--color-milk); }
 
@@ -34,17 +43,10 @@ body { background: var(--color-milk); color: var(--color-ink); font-family: var(
   60% { transform: translate(-2%, -1%); } 80% { transform: translate(3%, 3%); } 100% { transform: translate(0, 0); }
 }
 
-/* Threads card loop */
-.marquee { animation: marquee 40s linear infinite; }
-.marquee-wrap:hover .marquee, .marquee-wrap:focus-within .marquee { animation-play-state: paused; }
-@keyframes marquee { to { transform: translateX(-50%); } }
-
 .no-scrollbar { scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .grain::after { animation: none; }
-  .marquee { animation: none; }
-  .marquee-wrap { overflow-x: auto; }
 }

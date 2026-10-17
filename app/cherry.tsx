@@ -57,7 +57,7 @@ function DraftBanner() {
           transition={{ duration: 0.5, ease: EASE }}
           className="overflow-hidden bg-stem text-milk"
         >
-          <div className="mx-auto flex max-w-6xl items-start gap-3 px-4 py-2.5 text-[13px] leading-snug sm:items-center">
+          <div className="wrap flex items-start gap-3 py-2.5 text-[13px] leading-snug sm:items-center">
             <p className="flex-1">
               <b className="font-semibold">Mockup untuk @cherrryyyii.</b> Link Shopee ni link sebenar dari Threads awak. Nama
               produk, gambar &amp; ayat masih draf — awak sahkan dulu.
@@ -93,7 +93,7 @@ function CherryMark({ className = "" }: { className?: string }) {
 
 function Header() {
   return (
-    <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
+    <header className="wrap flex items-center justify-between py-4">
       <a href="#" className="flex items-center gap-2 font-display text-2xl tracking-tight">
         <CherryMark className="h-9 w-9" />
         cherrryyyii
@@ -174,18 +174,18 @@ function Hero({ routine }: { routine: Routine }) {
   const textY = useTransform(scrollYProgress, [0, 1], [0, reduce ? 0 : 60]);
 
   return (
-    <section ref={ref} className="relative mx-auto grid max-w-6xl gap-10 px-4 pb-16 pt-6 sm:px-6 md:grid-cols-[1.15fr_1fr] md:items-end md:pt-14">
+    <section ref={ref} className="wrap relative grid gap-10 pb-16 pt-6 md:min-h-[calc(100dvh-7rem)] md:grid-cols-[1.1fr_1fr] md:items-center md:gap-16 md:pt-8">
       <HazeBlobs />
       <motion.div style={{ y: textY }} className="relative">
         <motion.p initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}
           className="mb-5 inline-flex items-center gap-2 rounded-full bg-blush px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-cherry">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-cherry" /> Musim jerebu · Okt 2026
         </motion.p>
-        <h1 className="font-display text-[clamp(3rem,13vw,6.5rem)] leading-[0.92] tracking-[-0.03em]">
+        <h1 className="font-display text-[clamp(3rem,10.5vw,9.5rem)] leading-[0.92] tracking-[-0.03em]">
           <MaskLines delay={0.25} lines={["Jerebu", "dah sampai.", <span key="c" className="text-cherry">Ni rutin saya.</span>]} />
         </h1>
         <motion.p initial={{ opacity: 0, y: 14, filter: "blur(8px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} transition={{ delay: 0.75 }}
-          className="mt-6 max-w-md text-[17px] leading-relaxed text-muted">
+          className="mt-6 max-w-md text-[17px] leading-relaxed text-muted xl:max-w-lg xl:text-xl">
           Pilih rutin ikut jenis kulit, ikut step satu per satu, terus checkout kat Shopee. Tak payah scroll reply lagi.
         </motion.p>
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }} className="mt-8 flex flex-wrap items-center gap-4">
@@ -219,7 +219,7 @@ function HazeBlobs() {
 
 function Shelf({ routine }: { routine: Routine }) {
   return (
-    <div className="relative aspect-[5/4] w-full rounded-[2rem] bg-gradient-to-b from-blush to-haze/70 p-6">
+    <div className="relative aspect-[5/4] w-full rounded-[2rem] md:aspect-[4/4] xl:aspect-[5/4] bg-gradient-to-b from-blush to-haze/70 p-6">
       <div className="absolute left-6 top-5 text-xs font-semibold uppercase tracking-[0.14em] text-muted">Rak Cherry</div>
       <AnimatePresence mode="wait">
         <motion.div key={routine.id + "-label"} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
@@ -231,7 +231,7 @@ function Shelf({ routine }: { routine: Routine }) {
       <div className="absolute inset-x-6 bottom-[22%] flex items-end justify-center gap-[3%]">
         <AnimatePresence mode="popLayout">
           {routine.products.map((p, i) => (
-            <motion.div key={routine.id + p.id} className="relative w-[17%] max-w-24"
+            <motion.div key={routine.id + p.id} className="relative w-[17%] max-w-24 xl:max-w-36"
               initial={{ y: -260, rotate: i % 2 ? 10 : -10, opacity: 0 }}
               animate={{ y: 0, rotate: 0, opacity: 1 }}
               exit={{ y: -30, opacity: 0, filter: "blur(6px)", transition: { duration: 0.35, delay: i * 0.03 } }}
@@ -305,14 +305,14 @@ function Routines({ routines, routine, setActive }: { routines: Routine[]; routi
   // ≤4 tabs share the width evenly (nothing clipped on a phone); more than that scrolls.
   const fit = routines.length <= 4;
   return (
-    <section id="rutin" className="mx-auto max-w-6xl scroll-mt-4 px-4 pb-20 pt-24 sm:px-6">
+    <section id="rutin" className="wrap scroll-mt-4 pb-20 pt-24">
       <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-cherry">Rutin</p>
-      <h2 className="max-w-2xl font-display text-[clamp(2.2rem,7vw,4rem)] leading-[0.98] tracking-[-0.02em]">
+      <h2 className="max-w-3xl font-display text-[clamp(2.2rem,6vw,5.5rem)] leading-[0.98] tracking-[-0.02em]">
         <RevealWords text="Pilih kulit awak. Ikut step, terus beli." />
       </h2>
 
       {/* sticky tab bar: sits under the thumb while scrolling cards */}
-      <div className="sticky top-0 z-30 -mx-4 mt-8 bg-milk/80 px-4 py-3 backdrop-blur-md sm:-mx-6 sm:px-6">
+      <div className="sticky top-0 z-30 mx-[calc(var(--gutter)*-1)] mt-8 bg-milk/80 px-[var(--gutter)] py-3 backdrop-blur-md">
         <div role="tablist" aria-label="Pilih rutin" className={fit ? "grid grid-flow-col auto-cols-fr gap-1.5 sm:flex sm:gap-2" : "no-scrollbar flex gap-2 overflow-x-auto"}>
           {routines.map((r) => {
             const on = r.id === active;
@@ -348,7 +348,7 @@ function Routines({ routines, routine, setActive }: { routines: Routine[]; routi
               </motion.span>
             </div>
 
-            <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
               {routine.products.map((p, i) => (
                 <StepCard key={p.id} p={p} i={i} />
               ))}
@@ -408,7 +408,7 @@ function StepCard({ p, i }: { p: Product; i: number }) {
 
 function ThreadCard({ p, hidden }: { p: (typeof posts)[number]; hidden?: boolean }) {
   return (
-    <a href={p.url} target="_blank" rel="noopener" aria-hidden={hidden} tabIndex={hidden ? -1 : undefined}
+    <a href={p.url} target="_blank" rel="noopener" draggable={false} aria-hidden={hidden} tabIndex={hidden ? -1 : undefined}
       className="flex w-72 shrink-0 flex-col rounded-3xl border border-milk/10 bg-milk/[0.04] p-5 transition-[transform,background-color] duration-500 ease-out-expo hover:-translate-y-1.5 hover:bg-milk/[0.08] sm:w-80">
       <span className="text-xs text-milk/50">{p.date} · @cherrryyyii</span>
       <p className="mt-3 flex-1 text-[15px] leading-relaxed text-milk/90">“{p.quote}”</p>
@@ -423,23 +423,97 @@ function ThreadCard({ p, hidden }: { p: (typeof posts)[number]; hidden?: boolean
   );
 }
 
+/**
+ * Real scroll container that drifts left at a constant speed. Swipe, drag or trackpad
+ * take over instantly; the drift picks up again from wherever they leave it.
+ * Wraps by one copy-width so the loop never ends.
+ */
+function AutoScroller({ children, speed = 40 /* px per second */ }: { children: React.ReactNode; speed?: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const reduce = useReducedMotion();
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const track = el.firstElementChild as HTMLElement;
+    // distance from a card to the same card in the next copy = one loop period
+    const copyWidth = () => {
+      const kids = track.children as HTMLCollectionOf<HTMLElement>;
+      return kids[kids.length / 4].offsetLeft - kids[0].offsetLeft;
+    };
+    let pos = el.scrollLeft, last = performance.now(), frame = 0, idleUntil = 0;
+    const hold = (ms: number) => (idleUntil = performance.now() + ms);
+
+    // mouse drag (touch already scrolls natively)
+    let drag: { x: number; start: number; moved: boolean } | null = null;
+    const down = (e: PointerEvent) => { if (e.pointerType !== "mouse") return; drag = { x: e.clientX, start: el.scrollLeft, moved: false }; hold(1e9); };
+    const move = (e: PointerEvent) => {
+      if (!drag) return;
+      const dx = e.clientX - drag.x;
+      if (Math.abs(dx) > 4) drag.moved = true;
+      el.scrollLeft = drag.start - dx;
+    };
+    const up = () => { if (drag) hold(400); setTimeout(() => (drag = null)); };
+    const click = (e: MouseEvent) => drag?.moved && e.preventDefault(); // a drag isn't a tap on the card link
+    const user = () => hold(900); // touch / wheel: let momentum finish first
+
+    const tick = (now: number) => {
+      const dt = Math.min(now - last, 64) / 1000;
+      last = now;
+      const w = copyWidth();
+      if (now < idleUntil || reduce) {
+        pos = el.scrollLeft;
+      } else {
+        if (Math.abs(el.scrollLeft - pos) > 2) pos = el.scrollLeft; // user moved it; continue from there
+        pos += speed * dt;
+      }
+      if (pos >= w) pos -= w;
+      if (pos < 1) pos += w;
+      if (Math.abs(el.scrollLeft - pos) >= 0.5) el.scrollLeft = pos;
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+
+    el.addEventListener("pointerdown", down);
+    addEventListener("pointermove", move);
+    addEventListener("pointerup", up);
+    el.addEventListener("click", click, true);
+    el.addEventListener("touchstart", user, { passive: true });
+    el.addEventListener("touchmove", user, { passive: true });
+    el.addEventListener("wheel", user, { passive: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      el.removeEventListener("pointerdown", down);
+      removeEventListener("pointermove", move);
+      removeEventListener("pointerup", up);
+      el.removeEventListener("click", click, true);
+      el.removeEventListener("touchstart", user);
+      el.removeEventListener("touchmove", user);
+      el.removeEventListener("wheel", user);
+    };
+  }, [speed, reduce]);
+
+  return (
+    <div ref={ref} className="no-scrollbar cursor-grab overflow-x-auto overscroll-x-contain active:cursor-grabbing [&_a]:select-none" style={{ scrollbarWidth: "none" }}>
+      <div className="flex w-max gap-4 px-[var(--gutter)] pb-2">{children}</div>
+    </div>
+  );
+}
+
 function FromThreads() {
   return (
     <section className="overflow-hidden bg-ink py-20 text-milk">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+      <div className="wrap">
         <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-blush/70">Dari Threads</p>
-        <h2 className="max-w-2xl font-display text-[clamp(2.2rem,7vw,4rem)] leading-[0.98] tracking-[-0.02em]">
+        <h2 className="max-w-3xl font-display text-[clamp(2.2rem,6vw,5.5rem)] leading-[0.98] tracking-[-0.02em]">
           <RevealWords text="Post yang korang dah like." />
         </h2>
       </div>
-      {/* Endless loop: the list renders twice and the track slides -50%, so the seam never shows.
-          Pauses on hover/focus so a moving link can still be tapped. */}
       <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 1, ease: EASE }}
-        className="marquee-wrap mt-10 [mask-image:linear-gradient(90deg,transparent,#000_8%,#000_92%,transparent)]">
-        <div className="marquee flex w-max gap-4 pr-4">
-          {posts.map((p) => <ThreadCard key={p.url} p={p} />)}
-          {posts.map((p) => <ThreadCard key={p.url + "-dup"} p={p} hidden />)}
-        </div>
+        className="mt-10 [mask-image:linear-gradient(90deg,transparent,#000_6%,#000_94%,transparent)]">
+        <AutoScroller>
+          {/* 4 copies so the strip is always wider than the screen, even on ultra-wide */}
+          {[0, 1, 2, 3].map((copy) => posts.map((p) => <ThreadCard key={copy + p.url} p={p} hidden={copy > 0} />))}
+        </AutoScroller>
       </motion.div>
     </section>
   );
@@ -447,12 +521,12 @@ function FromThreads() {
 
 function Reviews({ reviews, routines }: { reviews: Review[]; routines: Routine[] }) {
   return (
-    <section className="mx-auto max-w-6xl px-4 pt-24 sm:px-6">
+    <section className="wrap pt-24">
       <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-cherry">Kata followers</p>
-      <h2 className="max-w-2xl font-display text-[clamp(2.2rem,7vw,4rem)] leading-[0.98] tracking-[-0.02em]">
+      <h2 className="max-w-3xl font-display text-[clamp(2.2rem,6vw,5.5rem)] leading-[0.98] tracking-[-0.02em]">
         <RevealWords text="Dah cuba? Ni cerita korang." />
       </h2>
-      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
         {reviews.map((r, i) => (
           <motion.figure key={r.id} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
             transition={{ duration: 0.9, ease: EASE, delay: i * 0.08 }} className="rounded-3xl bg-blush p-6">
@@ -495,14 +569,14 @@ function FloatingNav() {
 
 function About() {
   return (
-    <section id="about" className="mx-auto grid max-w-6xl scroll-mt-4 gap-8 px-4 py-24 sm:px-6 md:grid-cols-[auto_1fr] md:items-center">
+    <section id="about" className="wrap grid scroll-mt-4 gap-8 py-24 md:grid-cols-[auto_1fr] md:items-center md:gap-16">
       <motion.div initial={{ scale: 0.6, opacity: 0, rotate: -12 }} whileInView={{ scale: 1, opacity: 1, rotate: 0 }}
         viewport={{ once: true }} transition={{ type: "spring", stiffness: 180, damping: 14 }}
-        className="grid h-40 w-40 place-items-center rounded-full bg-blush md:h-56 md:w-56">
+        className="grid h-40 w-40 place-items-center rounded-full bg-blush md:h-64 md:w-64 xl:h-80 xl:w-80">
         <span className="text-center text-[11px] uppercase tracking-[0.14em] text-muted">foto<br />Cherry</span>
       </motion.div>
       <div>
-        <h2 className="font-display text-[clamp(2.2rem,7vw,4rem)] leading-none tracking-[-0.02em]"><RevealWords text="Hai, saya Cherry." /></h2>
+        <h2 className="font-display text-[clamp(2.2rem,6vw,5.5rem)] leading-none tracking-[-0.02em]"><RevealWords text="Hai, saya Cherry." /></h2>
         <motion.p initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.3 }}
           className="mt-5 max-w-xl text-lg leading-relaxed text-muted">
           Saya kongsi rutin skincare dan makeup untuk kulit Malaysia yang hadap panas, lembap dan kadang-kadang jerebu. Semua produk kat
@@ -519,7 +593,7 @@ function About() {
 function Footer() {
   return (
     <footer className="border-t border-ink/10">
-      <div className="mx-auto max-w-6xl px-4 py-10 text-sm text-muted sm:px-6">
+      <div className="wrap py-10 text-sm text-muted">
         <p className="max-w-2xl"><b className="text-ink">Pendedahan afiliasi:</b> {DISCLOSURE} Saya hanya letak produk yang saya betul-betul pakai.</p>
         <p className="mt-4 flex flex-wrap justify-between gap-2 text-xs">
           <span>© 2026 cherrryyyii · Draf mockup — bukan laman rasmi lagi.</span>
