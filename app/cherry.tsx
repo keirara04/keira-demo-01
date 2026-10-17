@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import {
   AnimatePresence,
   MotionConfig,
@@ -12,27 +13,33 @@ import {
   useTransform,
   type Variants,
 } from "motion/react";
-import { DISCLOSURE, THREADS, posts, routines, type Pack, type Product } from "./data";
+import { DISCLOSURE, THREADS, posts, type Pack, type Product, type Review, type Routine } from "./data";
+import { useSiteData } from "./store";
 
 // One easing curve everywhere — the long-tail "expo out" that After Effects' easy-ease
 // gets dragged into. Consistency is what makes it read as sleek rather than busy.
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 export default function Cherry() {
-  const [active, setActive] = useState(routines[0].id);
-  const routine = routines.find((r) => r.id === active)!;
+  const { data } = useSiteData();
+  const { routines, reviews } = data;
+  const [active, setActive] = useState(routines[0]?.id);
+  const routine = routines.find((r) => r.id === active) ?? routines[0];
+  const shown = reviews.filter((r) => r.visible && r.consent);
 
   return (
     <MotionConfig reducedMotion="user" transition={{ duration: 0.9, ease: EASE }}>
       <div className="grain min-h-dvh overflow-x-clip">
         <DraftBanner />
         <Header />
-        <Hero routine={routine} />
+        {routine && <Hero routine={routine} />}
         <Ribbon />
-        <Routines active={active} setActive={setActive} />
+        {routine && <Routines routines={routines} routine={routine} setActive={setActive} />}
         <FromThreads />
+        {shown.length > 0 && <Reviews reviews={shown} routines={routines} />}
         <About />
         <Footer />
+        <FloatingNav />
       </div>
     </MotionConfig>
   );
@@ -91,12 +98,14 @@ function Header() {
         <CherryMark className="h-9 w-9" />
         cherrryyyii
       </a>
-      <nav className="flex items-center gap-5 text-sm font-medium">
+      <nav className="flex items-center gap-2 text-sm font-medium sm:gap-5">
         <a href="#rutin" className="hidden hover:text-cherry sm:inline">Rutin</a>
         <a href="#about" className="hidden hover:text-cherry sm:inline">Tentang</a>
         <a href={THREADS} target="_blank" rel="noopener" className="rounded-full border border-ink/15 px-3.5 py-1.5 hover:border-cherry hover:text-cherry">
           Threads ↗
         </a>
+        {/* ponytail: open link for the mockup; hide behind login before going live */}
+        <Link href="/admin" className="rounded-full bg-ink px-3.5 py-1.5 text-milk hover:bg-cherry">Admin</Link>
       </nav>
     </header>
   );
@@ -157,7 +166,7 @@ function CountUp({ to, className = "" }: { to: number; className?: string }) {
 
 /* ---------- hero ---------- */
 
-function Hero({ routine }: { routine: (typeof routines)[number] }) {
+function Hero({ routine }: { routine: Routine }) {
   const ref = useRef<HTMLElement>(null);
   const reduce = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
@@ -208,7 +217,7 @@ function HazeBlobs() {
   );
 }
 
-function Shelf({ routine }: { routine: (typeof routines)[number] }) {
+function Shelf({ routine }: { routine: Routine }) {
   return (
     <div className="relative aspect-[5/4] w-full rounded-[2rem] bg-gradient-to-b from-blush to-haze/70 p-6">
       <div className="absolute left-6 top-5 text-xs font-semibold uppercase tracking-[0.14em] text-muted">Rak Cherry</div>
@@ -222,7 +231,7 @@ function Shelf({ routine }: { routine: (typeof routines)[number] }) {
       <div className="absolute inset-x-6 bottom-[22%] flex items-end justify-center gap-[3%]">
         <AnimatePresence mode="popLayout">
           {routine.products.map((p, i) => (
-            <motion.div key={routine.id + i} className="relative w-[17%] max-w-24"
+            <motion.div key={routine.id + p.id} className="relative w-[17%] max-w-24"
               initial={{ y: -260, rotate: i % 2 ? 10 : -10, opacity: 0 }}
               animate={{ y: 0, rotate: 0, opacity: 1 }}
               exit={{ y: -30, opacity: 0, filter: "blur(6px)", transition: { duration: 0.35, delay: i * 0.03 } }}
@@ -291,8 +300,10 @@ const cardVariants: Variants = {
   exit: { opacity: 0, y: -16, filter: "blur(8px)", transition: { duration: 0.3 } },
 };
 
-function Routines({ active, setActive }: { active: string; setActive: (id: string) => void }) {
-  const routine = routines.find((r) => r.id === active)!;
+function Routines({ routines, routine, setActive }: { routines: Routine[]; routine: Routine; setActive: (id: string) => void }) {
+  const active = routine.id;
+  // ≤4 tabs share the width evenly (nothing clipped on a phone); more than that scrolls.
+  const fit = routines.length <= 4;
   return (
     <section id="rutin" className="mx-auto max-w-6xl scroll-mt-4 px-4 pb-20 pt-24 sm:px-6">
       <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-cherry">Rutin</p>
@@ -302,12 +313,12 @@ function Routines({ active, setActive }: { active: string; setActive: (id: strin
 
       {/* sticky tab bar: sits under the thumb while scrolling cards */}
       <div className="sticky top-0 z-30 -mx-4 mt-8 bg-milk/80 px-4 py-3 backdrop-blur-md sm:-mx-6 sm:px-6">
-        <div role="tablist" aria-label="Pilih rutin" className="no-scrollbar flex gap-2 overflow-x-auto">
+        <div role="tablist" aria-label="Pilih rutin" className={fit ? "grid grid-flow-col auto-cols-fr gap-1.5 sm:flex sm:gap-2" : "no-scrollbar flex gap-2 overflow-x-auto"}>
           {routines.map((r) => {
             const on = r.id === active;
             return (
               <button key={r.id} role="tab" id={`tab-${r.id}`} aria-selected={on} aria-controls="rutin-panel" onClick={() => setActive(r.id)}
-                className={`relative shrink-0 rounded-full px-4 py-2.5 text-sm font-semibold transition-colors ${on ? "text-milk" : "text-ink hover:text-cherry"}`}>
+                className={`relative min-h-11 shrink-0 rounded-full px-3 py-2 text-[13px] font-semibold leading-tight transition-colors sm:px-4 sm:text-sm ${on ? "text-milk" : "bg-ink/[0.04] text-ink hover:text-cherry"}`}>
                 {on && <motion.span layoutId="tab-pill" className="absolute inset-0 rounded-full bg-cherry" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
                 <span className="relative">{r.tab}</span>
               </button>
@@ -339,7 +350,7 @@ function Routines({ active, setActive }: { active: string; setActive: (id: strin
 
             <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {routine.products.map((p, i) => (
-                <StepCard key={i} p={p} i={i} />
+                <StepCard key={p.id} p={p} i={i} />
               ))}
             </ol>
 
@@ -395,35 +406,88 @@ function StepCard({ p, i }: { p: Product; i: number }) {
 
 /* ---------- from threads ---------- */
 
+function ThreadCard({ p, hidden }: { p: (typeof posts)[number]; hidden?: boolean }) {
+  return (
+    <a href={p.url} target="_blank" rel="noopener" aria-hidden={hidden} tabIndex={hidden ? -1 : undefined}
+      className="flex w-72 shrink-0 flex-col rounded-3xl border border-milk/10 bg-milk/[0.04] p-5 transition-[transform,background-color] duration-500 ease-out-expo hover:-translate-y-1.5 hover:bg-milk/[0.08] sm:w-80">
+      <span className="text-xs text-milk/50">{p.date} · @cherrryyyii</span>
+      <p className="mt-3 flex-1 text-[15px] leading-relaxed text-milk/90">“{p.quote}”</p>
+      <div className="mt-6 flex items-end justify-between">
+        <div>
+          <CountUp to={p.likes} className="block font-display text-4xl text-blush" />
+          <span className="text-xs text-milk/50">likes · {p.shares} shares</span>
+        </div>
+        <span className="text-sm text-milk/60">↗</span>
+      </div>
+    </a>
+  );
+}
+
 function FromThreads() {
   return (
-    <section className="bg-ink py-20 text-milk">
+    <section className="overflow-hidden bg-ink py-20 text-milk">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-blush/70">Dari Threads</p>
         <h2 className="max-w-2xl font-display text-[clamp(2.2rem,7vw,4rem)] leading-[0.98] tracking-[-0.02em]">
           <RevealWords text="Post yang korang dah like." />
         </h2>
-        <div className="no-scrollbar -mx-4 mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:px-0 lg:grid-cols-4">
-          {posts.map((p, i) => (
-            <motion.a key={p.url} href={p.url} target="_blank" rel="noopener"
-              initial={{ opacity: 0, y: 40, rotate: i % 2 ? 2 : -2 }} whileInView={{ opacity: 1, y: 0, rotate: 0 }}
-              viewport={{ once: true, margin: "-10% 0px" }} transition={{ duration: 1, ease: EASE, delay: i * 0.08 }}
-              whileHover={{ y: -6 }}
-              className="flex w-[78%] shrink-0 snap-start flex-col rounded-3xl border border-milk/10 bg-milk/[0.04] p-5 sm:w-auto">
-              <span className="text-xs text-milk/50">{p.date} · @cherrryyyii</span>
-              <p className="mt-3 flex-1 text-[15px] leading-relaxed text-milk/90">“{p.quote}”</p>
-              <div className="mt-6 flex items-end justify-between">
-                <div>
-                  <CountUp to={p.likes} className="block font-display text-4xl text-blush" />
-                  <span className="text-xs text-milk/50">likes · {p.shares} shares</span>
-                </div>
-                <span className="text-sm text-milk/60">↗</span>
-              </div>
-            </motion.a>
-          ))}
+      </div>
+      {/* Endless loop: the list renders twice and the track slides -50%, so the seam never shows.
+          Pauses on hover/focus so a moving link can still be tapped. */}
+      <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 1, ease: EASE }}
+        className="marquee-wrap mt-10 [mask-image:linear-gradient(90deg,transparent,#000_8%,#000_92%,transparent)]">
+        <div className="marquee flex w-max gap-4 pr-4">
+          {posts.map((p) => <ThreadCard key={p.url} p={p} />)}
+          {posts.map((p) => <ThreadCard key={p.url + "-dup"} p={p} hidden />)}
         </div>
+      </motion.div>
+    </section>
+  );
+}
+
+function Reviews({ reviews, routines }: { reviews: Review[]; routines: Routine[] }) {
+  return (
+    <section className="mx-auto max-w-6xl px-4 pt-24 sm:px-6">
+      <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-cherry">Kata followers</p>
+      <h2 className="max-w-2xl font-display text-[clamp(2.2rem,7vw,4rem)] leading-[0.98] tracking-[-0.02em]">
+        <RevealWords text="Dah cuba? Ni cerita korang." />
+      </h2>
+      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {reviews.map((r, i) => (
+          <motion.figure key={r.id} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            transition={{ duration: 0.9, ease: EASE, delay: i * 0.08 }} className="rounded-3xl bg-blush p-6">
+            <blockquote className="text-[15px] leading-relaxed">“{r.text}”</blockquote>
+            <figcaption className="mt-5 flex items-center justify-between gap-3 text-sm">
+              <b className="font-semibold">{r.name}</b>
+              <span className="rounded-full bg-milk px-2.5 py-1 text-[11px] font-semibold text-cherry">
+                {routines.find((x) => x.id === r.routine)?.tab ?? "Rutin"}
+              </span>
+            </figcaption>
+          </motion.figure>
+        ))}
       </div>
     </section>
+  );
+}
+
+/** Always-there pill: jumps to the routines, then flips to "back to top" once you're past the hero. */
+function FloatingNav() {
+  const { scrollY } = useScroll();
+  const [past, setPast] = useState(false);
+  useEffect(() => scrollY.on("change", (y) => setPast(y > innerHeight * 0.9)), [scrollY]);
+  return (
+    <motion.a href={past ? "#" : "#rutin"} onClick={(e) => { if (past) { e.preventDefault(); scrollTo({ top: 0, behavior: "smooth" }); } }}
+      initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 1.4, type: "spring", stiffness: 260, damping: 22 }}
+      className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-50 flex h-12 items-center gap-2 overflow-hidden rounded-full bg-ink pl-4 pr-5 text-sm font-semibold text-milk shadow-[0_12px_30px_-8px_rgba(36,22,26,.55)] hover:bg-cherry sm:right-6"
+      aria-label={past ? "Kembali ke atas" : "Pergi ke rutin"}>
+      <AnimatePresence mode="popLayout" initial={false}>
+        <motion.span key={past ? "up" : "down"} initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -24, opacity: 0 }}
+          transition={{ duration: 0.35, ease: EASE }} className="flex items-center gap-2">
+          <span className="grid h-6 w-6 place-items-center rounded-full bg-milk/15">{past ? "↑" : "↓"}</span>
+          {past ? "Atas" : "Pilih rutin"}
+        </motion.span>
+      </AnimatePresence>
+    </motion.a>
   );
 }
 
@@ -457,7 +521,10 @@ function Footer() {
     <footer className="border-t border-ink/10">
       <div className="mx-auto max-w-6xl px-4 py-10 text-sm text-muted sm:px-6">
         <p className="max-w-2xl"><b className="text-ink">Pendedahan afiliasi:</b> {DISCLOSURE} Saya hanya letak produk yang saya betul-betul pakai.</p>
-        <p className="mt-4 text-xs">© 2026 cherrryyyii · Draf mockup — bukan laman rasmi lagi.</p>
+        <p className="mt-4 flex flex-wrap justify-between gap-2 text-xs">
+          <span>© 2026 cherrryyyii · Draf mockup — bukan laman rasmi lagi.</span>
+          <Link href="/admin" className="font-semibold hover:text-cherry">Admin ›</Link>
+        </p>
       </div>
     </footer>
   );

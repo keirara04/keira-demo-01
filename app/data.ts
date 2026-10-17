@@ -12,6 +12,7 @@
 export type Pack = "tube" | "pump" | "mist" | "dropper" | "jar" | "stick" | "compact";
 
 export type Product = {
+  id: string;
   step: string; // category, as she labels it
   name: string | null;
   brand: string | null;
@@ -21,6 +22,15 @@ export type Product = {
   core?: boolean; // same product in both skincare routines
   pack: Pack;
   tint: string;
+};
+
+export type Review = {
+  id: string;
+  name: string;
+  routine: string; // routine id
+  text: string;
+  visible: boolean;
+  consent: boolean; // follower agreed to be quoted (PDPA)
 };
 
 export type Routine = {
@@ -47,12 +57,12 @@ export const routines: Routine[] = [
     tip: "Key is to hydrate betul betul.",
     post: POST + "DemADMejx04",
     products: [
-      { step: "Cleanser", name: null, brand: null, note: null, link: "https://s.shopee.com.my/8fTCWdHrvp", pack: "tube", tint: "#F3E3D3" },
-      { step: "Toner mist", name: null, brand: null, note: "Toner mist ni paling function.", link: "https://s.shopee.com.my/7fafKryHAg", core: true, pack: "mist", tint: "#DCE8E0" },
-      { step: "Serum", name: null, brand: null, note: null, link: "https://s.shopee.com.my/3qNwlrloDV", core: true, pack: "dropper", tint: "#F2C9D1" },
+      { id: "p1", step: "Cleanser", name: null, brand: null, note: null, link: "https://s.shopee.com.my/8fTCWdHrvp", pack: "tube", tint: "#F3E3D3" },
+      { id: "p2", step: "Toner mist", name: null, brand: null, note: "Toner mist ni paling function.", link: "https://s.shopee.com.my/7fafKryHAg", core: true, pack: "mist", tint: "#DCE8E0" },
+      { id: "p3", step: "Serum", name: null, brand: null, note: null, link: "https://s.shopee.com.my/3qNwlrloDV", core: true, pack: "dropper", tint: "#F2C9D1" },
       // Brand inferred: same Shopee item as the one she calls "ceradan" in a reply. Confirm with her.
-      { step: "Moisturiser", name: null, brand: "Ceradan", note: "Kalau skin i macam extra dry, i akan pakai ceradan malam.", link: "https://s.shopee.com.my/9APT7h7zyo", core: true, pack: "jar", tint: "#FFFFFF" },
-      { step: "Sunscreen", name: null, brand: null, note: null, link: "https://s.shopee.com.my/6AlrYDRgbR", pack: "tube", tint: "#F7EBC9" },
+      { id: "p4", step: "Moisturiser", name: null, brand: "Ceradan", note: "Kalau skin i macam extra dry, i akan pakai ceradan malam.", link: "https://s.shopee.com.my/9APT7h7zyo", core: true, pack: "jar", tint: "#FFFFFF" },
+      { id: "p5", step: "Sunscreen", name: null, brand: null, note: null, link: "https://s.shopee.com.my/6AlrYDRgbR", pack: "tube", tint: "#F7EBC9" },
     ],
   },
   {
@@ -64,9 +74,9 @@ export const routines: Routine[] = [
     tip: "Toner mist tu yang paling lifesaver — kalau beli satu je, beli yang tu.",
     post: POST + "DebtxRuj8Xd",
     products: [
-      { step: "Toner mist", name: null, brand: null, note: "Paling lifesaverrr, tolongla beli yang ni.", link: "https://s.shopee.com.my/1qcm0dZNcY", core: true, pack: "mist", tint: "#DCE8E0" },
-      { step: "Serum", name: null, brand: null, note: null, link: "https://s.shopee.com.my/6L5BMztpJM", core: true, pack: "dropper", tint: "#F2C9D1" },
-      { step: "Moisturiser", name: null, brand: "Ceradan", note: null, link: "https://s.shopee.com.my/2gBt0RgFft", core: true, pack: "jar", tint: "#FFFFFF" },
+      { id: "p6", step: "Toner mist", name: null, brand: null, note: "Paling lifesaverrr, tolongla beli yang ni.", link: "https://s.shopee.com.my/1qcm0dZNcY", core: true, pack: "mist", tint: "#DCE8E0" },
+      { id: "p7", step: "Serum", name: null, brand: null, note: null, link: "https://s.shopee.com.my/6L5BMztpJM", core: true, pack: "dropper", tint: "#F2C9D1" },
+      { id: "p8", step: "Moisturiser", name: null, brand: "Ceradan", note: null, link: "https://s.shopee.com.my/2gBt0RgFft", core: true, pack: "jar", tint: "#FFFFFF" },
     ],
   },
   {
@@ -78,9 +88,9 @@ export const routines: Routine[] = [
     tip: "I pakai ni je korang — tiga barang, siap.",
     post: POST + "DdlNBYUjyai",
     products: [
-      { step: "Skin tint", shade: "Code 02", name: null, brand: null, note: null, link: "https://s.shopee.com.my/2LYV2wrUss", pack: "pump", tint: "#E7BFA2" },
-      { step: "Blusher", shade: "Code 03", name: null, brand: null, note: null, link: "https://s.shopee.com.my/6AlDc36YiR", pack: "compact", tint: "#EFA3B1" },
-      { step: "Lip tint", shade: "Code 012", name: null, brand: null, note: null, link: "https://s.shopee.com.my/8V98OOfHoW", pack: "stick", tint: "#B81D38" },
+      { id: "p9", step: "Skin tint", shade: "Code 02", name: null, brand: null, note: null, link: "https://s.shopee.com.my/2LYV2wrUss", pack: "pump", tint: "#E7BFA2" },
+      { id: "p10", step: "Blusher", shade: "Code 03", name: null, brand: null, note: null, link: "https://s.shopee.com.my/6AlDc36YiR", pack: "compact", tint: "#EFA3B1" },
+      { id: "p11", step: "Lip tint", shade: "Code 012", name: null, brand: null, note: null, link: "https://s.shopee.com.my/8V98OOfHoW", pack: "stick", tint: "#B81D38" },
     ],
   },
 ];
