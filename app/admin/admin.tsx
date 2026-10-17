@@ -232,7 +232,7 @@ function RoutineList({ data, edit, commit }: ListProps) {
               onDelete={() => confirm(`Padam "${r.tab}" dan ${r.products.length} produk dalamnya?`) &&
                 commit({ ...data, routines: data.routines.filter((x) => x.id !== r.id) }, "Kategori dipadam")}>
               <p className="truncate font-semibold">{r.tab}</p>
-              <p className="truncate text-xs text-muted">{r.when || "—"} · {r.products.length} produk</p>
+              <p className="truncate text-xs text-muted">{r.when || "Tiada masa"} · {r.products.length} produk</p>
             </Row>
           ))}
         </AnimatePresence>

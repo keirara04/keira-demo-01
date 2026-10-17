@@ -6,10 +6,10 @@ const gloock = Gloock({ variable: "--font-gloock", weight: "400", subsets: ["lat
 const figtree = Figtree({ variable: "--font-figtree", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Rutin Cherry — skincare & makeup",
+  title: "Katalog Cherry · skincare & makeup",
   description: "Rutin skincare dan makeup @cherrryyyii untuk kulit Malaysia. Ikut step satu per satu, terus beli kat Shopee.",
   openGraph: {
-    title: "Jerebu dah sampai. Ni rutin saya.",
+    title: "Skincare & makeup yang saya pakai.",
     description: "Rutin skincare & makeup @cherrryyyii, step by step.",
     locale: "ms_MY",
     type: "website",

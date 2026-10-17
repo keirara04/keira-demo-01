@@ -71,7 +71,7 @@ export const routines: Routine[] = [
     title: "Kulit berminyak & kombinasi",
     when: "Pagi · 3 step je",
     intro: "Skincare 3 steps je koranggg.",
-    tip: "Toner mist tu yang paling lifesaver — kalau beli satu je, beli yang tu.",
+    tip: "Toner mist tu yang paling lifesaver. Kalau beli satu je, beli yang tu.",
     post: POST + "DebtxRuj8Xd",
     products: [
       { id: "p6", step: "Toner mist", name: null, brand: null, note: "Paling lifesaverrr, tolongla beli yang ni.", link: "https://s.shopee.com.my/1qcm0dZNcY", core: true, pack: "mist", tint: "#DCE8E0" },
@@ -83,9 +83,9 @@ export const routines: Routine[] = [
     id: "makeup",
     tab: "Makeup harian",
     title: "Makeup hari kerja",
-    when: "Isnin – Jumaat",
+    when: "Isnin sampai Jumaat",
     intro: "My makeup look every Isnin sampai Jumaat pagi. Weekend baru all out!!!",
-    tip: "I pakai ni je korang — tiga barang, siap.",
+    tip: "I pakai ni je korang. Tiga barang, siap.",
     post: POST + "DdlNBYUjyai",
     products: [
       { id: "p9", step: "Skin tint", shade: "Code 02", name: null, brand: null, note: null, link: "https://s.shopee.com.my/2LYV2wrUss", pack: "pump", tint: "#E7BFA2" },
@@ -104,4 +104,4 @@ export const posts = [
 ];
 
 export const THREADS = "https://www.threads.com/@cherrryyyii";
-export const DISCLOSURE = "Link Shopee kat sini ialah link afiliasi. Saya dapat komisen kecil bila awak beli — harga awak sama je.";
+export const DISCLOSURE = "Link Shopee kat sini ialah link afiliasi. Saya dapat komisen kecil bila awak beli, harga awak sama je.";

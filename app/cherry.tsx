@@ -81,7 +81,7 @@ function DraftBanner() {
           <div className="wrap flex items-start gap-3 py-2.5 text-[13px] leading-snug sm:items-center">
             <p className="flex-1">
               <b className="font-semibold">Mockup untuk @cherrryyyii.</b> Link Shopee ni link sebenar dari Threads awak. Nama
-              produk, gambar &amp; ayat masih draf — awak sahkan dulu.
+              produk, gambar &amp; ayat masih draf.
             </p>
             <button onClick={() => setOpen(false)} className="shrink-0 rounded-full px-2 py-0.5 text-milk/80 hover:bg-white/10" aria-label="Tutup nota draf">
               ✕
@@ -137,7 +137,7 @@ function MaskLines({ lines, delay = 0, className = "" }: { lines: React.ReactNod
   return (
     <span className={className}>
       {lines.map((line, i) => (
-        <span key={i} className="block overflow-hidden pb-[0.08em]">
+        <span key={i} className="-mb-[0.16em] block overflow-hidden pb-[0.24em]">
           <motion.span
             className="block origin-bottom-left"
             initial={{ y: "110%", rotate: 4 }}
@@ -159,7 +159,7 @@ function RevealWords({ text, className = "" }: { text: string; className?: strin
     <motion.span className={className} initial="hidden" whileInView="show" viewport={{ once: true, margin: "-15% 0px" }}
       transition={{ staggerChildren: 0.06 }}>
       {words.map((w, i) => (
-        <span key={i} className="inline-block overflow-hidden pb-[0.1em] align-bottom">
+        <span key={i} className="-mb-[0.14em] inline-block overflow-hidden pb-[0.24em] align-bottom">
           <motion.span className="inline-block"
             variants={{ hidden: { y: "100%", opacity: 0, filter: "blur(6px)" }, show: { y: "0%", opacity: 1, filter: "blur(0px)" } }}
             transition={{ duration: 0.8, ease: EASE }}>
@@ -203,7 +203,7 @@ function Hero({ routine, routines, open }: { routine: Routine; routines: Routine
         <motion.p initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}
           className="mb-6 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-cherry">
           <span>Katalog Cherry</span>
-          <motion.span className="h-px w-10 origin-left bg-cherry" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: 0.4, duration: 1 }} />
+          <span className="text-cherry/50">·</span>
           <span className="text-muted">Edisi Okt 2026</span>
         </motion.p>
         <h1 className="font-display text-[clamp(3rem,6vw,8.5rem)] leading-[0.92] tracking-[-0.03em]">
@@ -432,7 +432,7 @@ function StepCard({ p, i, label }: { p: Product; i: number; label: string }) {
       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">{label}</p>
       <h4 className="mt-1 font-display text-2xl leading-tight">
         {p.brand ?? <span className="text-muted/60">Jenama</span>}{" "}
-        <span className="text-muted/60">{p.name ?? "— nama produk"}</span>
+        <span className="text-muted/60">{p.name ?? "· nama produk"}</span>
       </h4>
       {p.note && <p className="mt-3 border-l-2 border-stem/40 pl-3 text-[15px] italic leading-snug text-stem">“{p.note}”</p>}
 
@@ -557,7 +557,7 @@ function FromThreads() {
             Follow @cherrryyyii
             <span className="transition-transform duration-500 ease-out-expo group-hover:translate-x-0.5 group-hover:-translate-y-0.5">↗</span>
           </a>
-          <span className="text-sm text-milk/60">Rutin baru, soalan, review — semua kat sana dulu.</span>
+          <span className="text-sm text-milk/60">Rutin baru, soalan dan review, semua kat sana dulu.</span>
         </div>
       </div>
       <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 1, ease: EASE }}
@@ -648,7 +648,7 @@ function Footer() {
       <div className="wrap py-10 text-sm text-muted">
         <p className="max-w-2xl"><b className="text-ink">Pendedahan afiliasi:</b> {DISCLOSURE} Saya hanya letak produk yang saya betul-betul pakai.</p>
         <p className="mt-4 flex flex-wrap justify-between gap-2 text-xs">
-          <span>© 2026 cherrryyyii · Draf mockup — bukan laman rasmi lagi.</span>
+          <span>© 2026 cherrryyyii · Draf mockup, bukan laman rasmi lagi.</span>
           <Link href="/admin" className="font-semibold hover:text-cherry">Admin ›</Link>
         </p>
       </div>
