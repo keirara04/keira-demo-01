@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -8,18 +8,15 @@ import {
   MotionConfig,
   animate,
   motion,
-  useInView,
   useReducedMotion,
   useScroll,
   useTransform,
   type Variants,
 } from "motion/react";
-import { DISCLOSURE, THREADS, posts, type Pack, type Product, type Review, type Routine } from "./data";
+import { DISCLOSURE, FAQ, SKIN_QUIZ, THREADS, posts, type Pack, type Product, type Review, type Routine } from "./data";
 import { useSiteData } from "./store";
+import { CountUp, EASE, MaskLines, RevealWords } from "./motion";
 
-// One easing curve everywhere — the long-tail "expo out" that After Effects' easy-ease
-// gets dragged into. Consistency is what makes it read as sleek rather than busy.
-const EASE = [0.16, 1, 0.3, 1] as const;
 
 const ALL = "semua";
 
@@ -47,10 +44,14 @@ export default function Cherry() {
   const [active, setActive] = useState(ALL);
   const routine = routines.find((r) => r.id === active) ?? routines[0];
   const shown = reviews.filter((r) => r.visible && r.consent);
+  // Bumped when the first-visit intro lifts, so the hero animation plays as it's revealed.
+  const [run, setRun] = useState(0);
+  const reveal = useCallback(() => setRun((n) => n + 1), []);
 
   return (
     <MotionConfig reducedMotion="user" transition={{ duration: 0.9, ease: EASE }}>
-      <div className="grain min-h-dvh overflow-x-clip">
+      <Intro onReveal={reveal} />
+      <div key={run} className="grain min-h-dvh overflow-x-clip">
         <DraftBanner />
         <Header />
         {routine && <Hero routine={routine} routines={routines} open={(id) => { setActive(id); document.getElementById("rutin")?.scrollIntoView(); }} />}
@@ -58,6 +59,7 @@ export default function Cherry() {
         {routine && <Routines routines={routines} routine={routine} setActive={setActive} />}
         <FromThreads />
         {shown.length > 0 && <Reviews reviews={shown} routines={routines} />}
+        <Faq />
         <About />
         <Footer />
         <FloatingNav />
@@ -67,6 +69,100 @@ export default function Cherry() {
 }
 
 /* ---------- small pieces ---------- */
+
+/* ---------- first-visit intro ---------- */
+
+const INTRO_KEY = "cherry-intro-seen";
+const IN_OUT = [0.76, 0, 0.24, 1] as const; // hard ease-in-out, the AE "wipe" curve
+
+/**
+ * Plays once per browser: cherry draws on, name types up, counter runs to 100,
+ * then a red and a milk panel wipe upward to reveal the page.
+ * Renders on the server too (covering the page) so first-timers never see a flash;
+ * returning visitors have it removed on the first client tick.
+ */
+function Intro({ onReveal }: { onReveal: () => void }) {
+  const [show, setShow] = useState(true);
+  const [first, setFirst] = useState(false);
+  const count = useRef<HTMLSpanElement>(null);
+  const reduce = useReducedMotion();
+  const started = useRef(false);
+  const done = useRef(false);
+  const finish = useCallback(() => {
+    if (done.current) return; // skip and the timer both land here; reveal only once
+    done.current = true;
+    setShow(false);
+    onReveal();
+  }, [onReveal]);
+
+  useEffect(() => {
+    if (started.current) return; // run once, even if props/reduced-motion settle later
+    started.current = true;
+    let seen = false;
+    try { seen = localStorage.getItem(INTRO_KEY) === "1"; localStorage.setItem(INTRO_KEY, "1"); } catch {}
+    if (seen) { setShow(false); return; }
+    setFirst(true);
+    const ms = reduce ? 700 : 2600;
+    if (count.current) animate(0, 100, { duration: ms / 1000 - 0.3, ease: [0.65, 0, 0.35, 1],
+      onUpdate: (v) => count.current && (count.current.textContent = String(Math.round(v)).padStart(3, "0")) });
+    // No cleanup on purpose: React dev runs effects twice, and clearing here would strand the intro.
+    setTimeout(finish, ms);
+  }, [reduce, finish]);
+
+  useEffect(() => {
+    document.documentElement.style.overflow = show ? "hidden" : "";
+  }, [show]);
+
+  
+  const name = "cherrryyyii".split("");
+
+  return (
+    <AnimatePresence>
+      {show && (
+        <motion.div key="red" aria-hidden className="fixed inset-0 z-[99] bg-cherry"
+          exit={first ? { y: "-100%", transition: { duration: 0.9, ease: IN_OUT, delay: 0.12 } } : { opacity: 0, transition: { duration: 0 } }} />
+      )}
+      {show && (
+        <motion.div key="milk" role="status" aria-label="Memuatkan" className="fixed inset-0 z-[100] flex flex-col bg-milk text-ink"
+          exit={first ? { y: "-100%", transition: { duration: 0.9, ease: IN_OUT } } : { opacity: 0, transition: { duration: 0.15 } }}>
+          <div className="wrap flex items-center justify-between py-5 text-xs font-semibold uppercase tracking-[0.18em] text-muted">
+            <span>Katalog Cherry</span>
+            {first && <button onClick={finish} className="rounded-full px-3 py-1.5 hover:bg-blush hover:text-cherry">Langkau ✕</button>}
+          </div>
+
+          <div className={`flex flex-1 flex-col items-center justify-center gap-6 transition-opacity duration-300 ${first ? "opacity-100" : "opacity-0"}`}>
+            {first && <CherryMark className="h-24 w-24 sm:h-32 sm:w-32" />}
+            <p className="flex overflow-hidden pb-[0.15em] font-display text-[clamp(2.75rem,9vw,6rem)] leading-none tracking-[-0.02em]">
+              {first && name.map((ch, i) => (
+                <motion.span key={i} className="inline-block" initial={{ y: "110%", rotate: 8 }} animate={{ y: "0%", rotate: 0 }}
+                  transition={{ duration: 0.9, ease: EASE, delay: 0.7 + i * 0.045 }}>
+                  {ch}
+                </motion.span>
+              ))}
+            </p>
+            {first && (
+              <motion.p initial={{ opacity: 0, letterSpacing: "0.5em" }} animate={{ opacity: 1, letterSpacing: "0.18em" }}
+                transition={{ duration: 1.2, ease: EASE, delay: 1.2 }} className="text-xs font-semibold uppercase text-muted">
+                Skincare &amp; makeup yang saya pakai
+              </motion.p>
+            )}
+          </div>
+
+          <div className={`wrap pb-6 ${first ? "" : "opacity-0"}`}>
+            <div className="flex items-end justify-between">
+              <span className="text-xs text-muted">Okt 2026</span>
+              <span ref={count} className="font-display text-[clamp(3rem,10vw,7rem)] leading-none text-cherry">000</span>
+            </div>
+            <div className="mt-3 h-px overflow-hidden bg-ink/10">
+              {first && <motion.div className="h-full origin-left bg-cherry" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }}
+                transition={{ duration: reduce ? 0.4 : 2.3, ease: [0.65, 0, 0.35, 1] }} />}
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
 
 function DraftBanner() {
   const [open, setOpen] = useState(true);
@@ -130,59 +226,6 @@ function Header() {
       </nav>
     </header>
   );
-}
-
-/** Each line slides up out of a mask — the signature kinetic-type move. */
-function MaskLines({ lines, delay = 0, className = "" }: { lines: React.ReactNode[]; delay?: number; className?: string }) {
-  return (
-    <span className={className}>
-      {lines.map((line, i) => (
-        <span key={i} className="-mb-[0.16em] block overflow-hidden pb-[0.24em]">
-          <motion.span
-            className="block origin-bottom-left"
-            initial={{ y: "110%", rotate: 4 }}
-            animate={{ y: "0%", rotate: 0 }}
-            transition={{ duration: 1.1, ease: EASE, delay: delay + i * 0.12 }}
-          >
-            {line}
-          </motion.span>
-        </span>
-      ))}
-    </span>
-  );
-}
-
-/** Words rise + unblur when scrolled into view. */
-function RevealWords({ text, className = "" }: { text: string; className?: string }) {
-  const words = text.split(" ");
-  return (
-    <motion.span className={className} initial="hidden" whileInView="show" viewport={{ once: true, margin: "-15% 0px" }}
-      transition={{ staggerChildren: 0.06 }}>
-      {words.map((w, i) => (
-        <span key={i} className="-mb-[0.14em] inline-block overflow-hidden pb-[0.24em] align-bottom">
-          <motion.span className="inline-block"
-            variants={{ hidden: { y: "100%", opacity: 0, filter: "blur(6px)" }, show: { y: "0%", opacity: 1, filter: "blur(0px)" } }}
-            transition={{ duration: 0.8, ease: EASE }}>
-            {w}&nbsp;
-          </motion.span>
-        </span>
-      ))}
-    </motion.span>
-  );
-}
-
-function CountUp({ to, className = "" }: { to: number; className?: string }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true });
-  const reduce = useReducedMotion();
-  useEffect(() => {
-    if (!inView || !ref.current) return;
-    const el = ref.current;
-    if (reduce) { el.textContent = to.toLocaleString("en-MY"); return; }
-    const c = animate(0, to, { duration: 1.8, ease: EASE, onUpdate: (v) => (el.textContent = Math.round(v).toLocaleString("en-MY")) });
-    return () => c.stop();
-  }, [inView, to, reduce]);
-  return <span ref={ref} className={className}>0</span>;
 }
 
 /* ---------- hero ---------- */
@@ -355,6 +398,8 @@ function Routines({ routines, routine, setActive }: { routines: Routine[]; routi
         <RevealWords text="Produk yang saya guna setakat ni." />
       </h2>
 
+      <SkinPicker routines={routines} pick={(id) => { setActive(id); document.getElementById("rutin-panel")?.scrollIntoView({ block: "start" }); }} />
+
       {/* sticky tab bar: sits under the thumb while scrolling cards */}
       <div className="sticky top-0 z-30 mx-[calc(var(--gutter)*-1)] mt-8 bg-milk/80 px-[var(--gutter)] py-3 backdrop-blur-md">
         <div role="tablist" aria-label="Pilih rutin" className={fit ? "grid grid-flow-col auto-cols-fr gap-1.5 sm:flex sm:gap-2" : "no-scrollbar flex gap-2 overflow-x-auto"}>
@@ -372,7 +417,7 @@ function Routines({ routines, routine, setActive }: { routines: Routine[]; routi
         <p className="mt-2 text-xs text-muted">{DISCLOSURE}</p>
       </div>
 
-      <div id="rutin-panel" role="tabpanel" aria-labelledby={`tab-${active}`} className="mt-8">
+      <div id="rutin-panel" role="tabpanel" aria-labelledby={`tab-${active}`} className="mt-8 scroll-mt-32">
         <AnimatePresence mode="wait">
           <motion.div key={routine.id} initial="hidden" animate="show" exit="exit">
             <div className="mb-8 grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
@@ -392,6 +437,8 @@ function Routines({ routines, routine, setActive }: { routines: Routine[]; routi
               </motion.span>
             </div>
 
+            {routine.id === ALL && <StartHere products={routine.products.filter((p) => p.core)} />}
+
             <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
               {routine.products.map((p, i) => (
                 <StepCard key={p.id} p={p} i={i} label={routine.id === ALL ? p.step : `Langkah ${i + 1} · ${p.step}`} />
@@ -407,6 +454,61 @@ function Routines({ routines, routine, setActive }: { routines: Routine[]; routi
         </AnimatePresence>
       </div>
     </section>
+  );
+}
+
+/** Two taps: describe your skin, land on the matching routine. */
+function SkinPicker({ routines, pick }: { routines: Routine[]; pick: (id: string) => void }) {
+  const options = SKIN_QUIZ.filter((o) => routines.some((r) => r.id === o.routine));
+  if (!options.length) return null;
+  return (
+    <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8, ease: EASE }}
+      className="mt-8 rounded-3xl bg-blush p-5 sm:p-6">
+      <p className="font-display text-2xl">Tak pasti nak mula mana?</p>
+      <p className="mt-1 text-sm text-muted">Kulit awak macam mana? Tekan satu, saya tunjuk rutin yang sesuai.</p>
+      <div className="mt-4 grid gap-2 sm:grid-cols-3">
+        {options.map((o) => (
+          <button key={o.label} onClick={() => pick(o.routine)}
+            className="group flex items-center justify-between gap-3 rounded-2xl bg-milk px-4 py-3.5 text-left transition-colors hover:bg-cherry hover:text-milk">
+            <span>
+              <span className="block font-semibold">{o.label}</span>
+              <span className="block text-xs text-muted group-hover:text-milk/80">{o.hint}</span>
+            </span>
+            <span className="transition-transform duration-500 ease-out-expo group-hover:translate-x-1">→</span>
+          </button>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+/** Her core trio — the "3 steps je" products she uses on every skin type. */
+function StartHere({ products }: { products: Product[] }) {
+  if (products.length < 2) return null;
+  return (
+    <motion.div variants={{ hidden: { opacity: 0, y: 24 }, show: { opacity: 1, y: 0, transition: { duration: 0.9, ease: EASE } }, exit: { opacity: 0 } }}
+      className="mb-6 overflow-hidden rounded-3xl bg-ink p-5 text-milk sm:p-8">
+      <div className="grid gap-6 lg:grid-cols-[1fr_2fr] lg:items-center">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blush/70">Mula sini</p>
+          <p className="mt-2 font-display text-3xl leading-tight sm:text-4xl">“Skincare {products.length} steps je.”</p>
+          <p className="mt-3 text-sm leading-relaxed text-milk/70">Ni yang saya pakai hari-hari, untuk kulit kering dan berminyak. Kalau baru nak mula, mula dengan ni.</p>
+        </div>
+        <ol className="grid gap-3 sm:grid-cols-3">
+          {products.map((p, i) => (
+            <li key={p.id} className="flex flex-col rounded-2xl bg-milk/[0.06] p-4">
+              <span className="font-display text-3xl text-blush">{String(i + 1).padStart(2, "0")}</span>
+              <span className="mt-2 font-semibold">{p.brand ? `${p.brand} · ` : ""}{p.step}</span>
+              {p.note && <span className="mt-1 text-sm italic text-milk/70">“{p.note}”</span>}
+              <a href={p.link} target="_blank" rel="sponsored noopener" aria-label={`Beli ${p.step} di Shopee (tab baru, link afiliasi)`}
+                className="mt-auto inline-flex items-center gap-1 pt-4 text-sm font-semibold text-blush hover:text-milk">
+                Beli di Shopee <span aria-hidden>→</span>
+              </a>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </motion.div>
   );
 }
 
@@ -618,6 +720,34 @@ function FloatingNav() {
 }
 
 /* ---------- about + footer ---------- */
+
+function Faq() {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: FAQ.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
+  };
+  return (
+    <section className="wrap grid gap-8 pt-24 md:grid-cols-[1fr_1.4fr] md:gap-16">
+      <div>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-cherry">Soalan</p>
+        <h2 className="font-display text-[clamp(2.2rem,6vw,5.5rem)] leading-[0.98] tracking-[-0.02em]"><RevealWords text="Selalu orang tanya." /></h2>
+      </div>
+      <div className="border-t border-ink/15">
+        {FAQ.map((f) => (
+          <details key={f.q} className="group border-b border-ink/15">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 text-lg font-semibold [&::-webkit-details-marker]:hidden">
+              {f.q}
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-blush text-cherry transition-transform duration-500 ease-out-expo group-open:rotate-45">+</span>
+            </summary>
+            <p className="pb-5 pr-12 leading-relaxed text-muted">{f.a}</p>
+          </details>
+        ))}
+      </div>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
+    </section>
+  );
+}
 
 function About() {
   return (

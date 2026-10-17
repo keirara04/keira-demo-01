@@ -105,3 +105,19 @@ export const posts = [
 
 export const THREADS = "https://www.threads.com/@cherrryyyii";
 export const DISCLOSURE = "Link Shopee kat sini ialah link afiliasi. Saya dapat komisen kecil bila awak beli, harga awak sama je.";
+
+// "Kulit awak?" picker: plain-language symptoms that point at an existing routine id.
+export const SKIN_QUIZ = [
+  { label: "Kering / sensitif", hint: "Rasa ketat, mudah pedih", routine: "kering" },
+  { label: "Breakout masa jerebu", hint: "Naik jerawat bila berjerebu", routine: "kering" },
+  { label: "Berminyak / kombinasi", hint: "Berkilat kat T-zone", routine: "berminyak" },
+];
+
+// Draft answers — factual, no product claims. Cherry signs off before launch.
+export const FAQ = [
+  { q: "Sesuai untuk kulit sensitif?", a: "Rutin Kering & jerebu tu memang untuk kulit kering dan sensitif. Tapi kulit setiap orang lain, jadi cuba sikit kat rahang dulu (patch test) sebelum pakai satu muka." },
+  { q: "Kenapa semua link pergi Shopee?", a: "Saya join program afiliasi Shopee, jadi semua link kat sini link Shopee. Satu tempat, senang nak checkout." },
+  { q: "Link afiliasi tu apa?", a: "Bila awak beli guna link saya, Shopee bagi saya komisen kecil. Harga awak tak berubah langsung." },
+  { q: "Kenapa tak ada harga?", a: "Harga kat Shopee selalu berubah, lagi-lagi masa sale. Tekan Beli di Shopee untuk tengok harga terkini." },
+  { q: "Bila senarai ni dikemaskini?", a: "Setiap kali saya tukar atau tambah produk dalam rutin. Produk yang saya dah tak pakai, saya buang dari sini." },
+];
