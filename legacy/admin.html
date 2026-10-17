@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Admin Cherry</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gloock&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --milk: #FDF7F8;
+    --cherry: #B81D38;
+    --cherry-deep: #7E1428;
+    --blush: #F7DCE1;
+    --stem: #2F4A3A;
+    --mint: #EEF3EF;
+    --haze: #E6E0DC;
+    --ink: #24161A;
+    --muted: #6E5C61;
+    --warn: #9A5B00;
+    --display: "Gloock", Georgia, serif;
+    --body: "Figtree", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--milk); color: var(--ink); font: 400 .9375rem/1.5 var(--body); }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--cherry); outline-offset: 2px; }
+  [hidden] { display: none !important; }
+
+  .shell { display: grid; min-height: 100vh; grid-template-columns: 15rem 1fr; }
+  aside {
+    position: sticky; top: 0; height: 100vh;
+    background: var(--ink); color: #F3E9EB;
+    padding: 1.5rem 1rem; display: flex; flex-direction: column; gap: 1.5rem;
+  }
+  .wordmark { font: 1.6rem/1 var(--display); text-decoration: none; padding: 0 .5rem; }
+  .wordmark span { color: #F28A9C; }
+  .wordmark small { display: block; font: 500 .75rem/1.4 var(--body); color: #BFA9AE; margin-top: .35rem; }
+  .side-nav { display: flex; flex-direction: column; gap: .2rem; }
+  .side-nav button {
+    all: unset; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+    padding: .65rem .75rem; border-radius: 10px; font-weight: 500; color: #E4D6D9;
+  }
+  .side-nav button:hover { background: rgba(255,255,255,.06); }
+  .side-nav button:focus-visible { outline: 2px solid #F28A9C; }
+  .side-nav button[aria-current="page"] { background: var(--cherry); color: #fff; }
+  .side-nav .count { font-size: .75rem; opacity: .75; }
+  .view-site { margin-top: auto; display: flex; align-items: center; justify-content: center; min-height: 44px; border: 1px solid rgba(255,255,255,.25); border-radius: 999px; text-decoration: none; font-weight: 600; }
+  .view-site:hover { background: #fff; color: var(--ink); }
+
+  main { padding: 2rem clamp(1rem, 3vw, 3rem) 4rem; min-width: 0; }
+  .demo-note { background: #FFF4E0; color: var(--warn); border-radius: 12px; padding: .75rem 1rem; font-size: .875rem; margin-bottom: 1.5rem; }
+  .page-head { display: flex; align-items: end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  h1 { font: 2.2rem/1.05 var(--display); font-weight: 400; margin: 0; letter-spacing: -.01em; }
+  .page-head p { margin: .35rem 0 0; color: var(--muted); }
+  h2 { font: 1.35rem/1.2 var(--display); font-weight: 400; margin: 0 0 .75rem; }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+    min-height: 42px; padding: .5rem 1.1rem; border-radius: 999px;
+    border: 1.5px solid var(--ink); background: var(--ink); color: #fff;
+    font: 600 .9rem var(--body); cursor: pointer; text-decoration: none;
+  }
+  .btn:hover { background: var(--cherry); border-color: var(--cherry); }
+  .btn.ghost { background: transparent; color: var(--ink); }
+  .btn.ghost:hover { background: var(--ink); color: #fff; }
+  .btn.danger { background: transparent; color: var(--cherry); border-color: var(--cherry); }
+  .btn.danger:hover { background: var(--cherry); color: #fff; }
+  .btn.sm { min-height: 36px; padding: .3rem .8rem; font-size: .8125rem; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+  .stat { background: #fff; border: 1px solid var(--haze); border-radius: 16px; padding: 1.1rem 1.25rem; }
+  .stat b { display: block; font: 2.4rem/1 var(--display); font-weight: 400; }
+  .stat span { color: var(--muted); font-size: .875rem; }
+  .stat.alert b { color: var(--warn); }
+  .panel { background: #fff; border: 1px solid var(--haze); border-radius: 16px; padding: 1.25rem; margin-bottom: 1.5rem; }
+  .todo { list-style: none; margin: 0; padding: 0; }
+  .todo li { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .7rem 0; border-top: 1px solid var(--haze); }
+  .todo li:first-child { border-top: 0; }
+  .ok { color: var(--stem); }
+
+  .toolbar { display: flex; gap: .6rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .toolbar input, .toolbar select { min-height: 42px; }
+  input, select, textarea {
+    font: inherit; color: inherit; background: #fff;
+    border: 1px solid var(--haze); border-radius: 10px; padding: .55rem .75rem; width: 100%;
+  }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--cherry); box-shadow: 0 0 0 3px var(--blush); }
+  .toolbar input { flex: 1 1 14rem; width: auto; }
+  .toolbar select { flex: 0 1 14rem; width: auto; }
+
+  table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid var(--haze); border-radius: 16px; overflow: hidden; }
+  th, td { text-align: left; padding: .75rem 1rem; border-top: 1px solid var(--haze); vertical-align: middle; }
+  th { border-top: 0; font-size: .8125rem; font-weight: 600; color: var(--muted); background: #FBF4F5; }
+  tr.off td { opacity: .5; }
+  .pname { display: flex; align-items: center; gap: .75rem; }
+  .pname small { display: block; color: var(--muted); }
+  .swatch { width: 1.6rem; height: 2.2rem; border-radius: 6px; border: 1px solid var(--haze); flex: none; }
+  .pill { display: inline-block; font-size: .75rem; font-weight: 600; padding: .15rem .6rem; border-radius: 999px; background: var(--blush); color: var(--cherry-deep); white-space: nowrap; }
+  .pill.warn { background: #FFF4E0; color: var(--warn); }
+  .pill.ok { background: var(--mint); color: var(--stem); }
+  .actions { display: flex; gap: .4rem; justify-content: flex-end; flex-wrap: wrap; }
+  .empty-row { text-align: center; color: var(--muted); padding: 2rem; }
+
+  .review-list { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); }
+  .review-card { background: #fff; border: 1px solid var(--haze); border-radius: 16px; padding: 1.1rem; display: flex; flex-direction: column; gap: .6rem; }
+  .review-card.off { opacity: .55; }
+  .review-card p { margin: 0; }
+  .review-card .who { font-size: .8125rem; color: var(--muted); }
+  .stars { color: #E0A526; letter-spacing: 1px; }
+
+  .form-grid { display: grid; gap: 1rem; grid-template-columns: 1fr 1fr; }
+  .field { display: flex; flex-direction: column; gap: .35rem; }
+  .field.full { grid-column: 1 / -1; }
+  .field label { font-weight: 600; font-size: .875rem; }
+  .field .hint { font-size: .8125rem; color: var(--muted); }
+  .check { flex-direction: row; align-items: center; gap: .6rem; }
+  .check input { width: 1.2rem; height: 1.2rem; accent-color: var(--cherry); }
+  input[type="color"] { padding: .2rem; height: 42px; }
+  textarea { min-height: 5.5rem; resize: vertical; }
+
+  dialog {
+    width: min(40rem, calc(100vw - 2rem)); max-height: calc(100vh - 2rem);
+    border: 0; border-radius: 20px; padding: 0; color: var(--ink);
+    box-shadow: 0 30px 80px -30px rgba(36,22,26,.5);
+  }
+  dialog::backdrop { background: rgba(36,22,26,.45); backdrop-filter: blur(2px); }
+  dialog form { display: flex; flex-direction: column; max-height: calc(100vh - 2rem); }
+  .dlg-head { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--haze); }
+  .dlg-head h2 { margin: 0; }
+  .dlg-body { padding: 1.25rem 1.5rem; overflow: auto; }
+  .dlg-foot { display: flex; justify-content: flex-end; gap: .6rem; padding: 1rem 1.5rem; border-top: 1px solid var(--haze); background: #FBF4F5; }
+  .x { all: unset; cursor: pointer; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; font-size: 1.4rem; }
+  .x:hover { background: var(--blush); }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 1.5rem; transform: translate(-50%, 1rem); opacity: 0;
+    background: var(--stem); color: #fff; padding: .7rem 1.2rem; border-radius: 999px; font-weight: 600;
+    transition: opacity .2s, transform .2s; pointer-events: none; z-index: 20;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  @media (max-width: 860px) {
+    .shell { grid-template-columns: 1fr; }
+    aside { position: sticky; top: 0; z-index: 5; height: auto; flex-direction: row; align-items: center; padding: .75rem 1rem; gap: 1rem; overflow-x: auto; scrollbar-width: none; }
+    .wordmark small, .view-site { display: none; }
+    .wordmark { font-size: 1.3rem; padding: 0; flex: none; }
+    .side-nav { flex-direction: row; }
+    .side-nav button { white-space: nowrap; padding: .5rem .75rem; }
+    .side-nav .count { display: none; }
+    .form-grid { grid-template-columns: 1fr; }
+    /* Tables collapse to cards on phones */
+    table, tbody, tr, td { display: block; border: 0; background: none; }
+    thead { display: none; }
+    tr { background: #fff; border: 1px solid var(--haze); border-radius: 14px; padding: .75rem; margin-bottom: .75rem; }
+    td { padding: .25rem 0; }
+    td[data-l]::before { content: attr(data-l) ": "; color: var(--muted); font-size: .8125rem; }
+    .actions { justify-content: flex-start; padding-top: .5rem; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside>
+    <a class="wordmark" href="#">cherr<span>yyy</span>ii<small>Panel admin</small></a>
+    <nav class="side-nav" aria-label="Admin">
+      <button data-view="home">Ringkasan</button>
+      <button data-view="products">Produk <span class="count" id="cProducts"></span></button>
+      <button data-view="routines">Rutin &amp; kategori <span class="count" id="cRoutines"></span></button>
+      <button data-view="reviews">Ulasan <span class="count" id="cReviews"></span></button>
+      <button data-view="settings">Tetapan laman</button>
+      <button data-view="data">Backup data</button>
+    </nav>
+    <a class="view-site" href="index.html" target="_blank">Lihat laman</a>
+  </aside>
+
+  <main>
+    <p class="demo-note">Versi demo: perubahan disimpan dalam browser ini sahaja dan belum ada login. Jangan upload fail admin ni ke internet.</p>
+
+    <!-- Ringkasan -->
+    <section data-page="home">
+      <div class="page-head"><div><h1>Selamat datang, Cherry</h1><p>Semua yang perlu dikemas kini untuk laman rutin awak.</p></div>
+        <button class="btn" data-add="products">Tambah produk</button></div>
+      <div class="stats" id="stats"></div>
+      <div class="panel"><h2>Perlu perhatian</h2><ul class="todo" id="todo"></ul></div>
+    </section>
+
+    <!-- Produk -->
+    <section data-page="products">
+      <div class="page-head"><div><h1>Produk</h1><p>Tambah produk, link affiliate Shopee dan susunan step dalam rutin.</p></div>
+        <button class="btn" data-add="products">Tambah produk</button></div>
+      <div class="toolbar">
+        <input type="search" id="pSearch" placeholder="Cari nama atau jenama" aria-label="Cari produk">
+        <select id="pFilter" aria-label="Tapis ikut rutin"></select>
+      </div>
+      <table>
+        <thead><tr><th>Produk</th><th>Rutin</th><th>Step</th><th>Harga</th><th>Link</th><th></th></tr></thead>
+        <tbody id="pRows"></tbody>
+      </table>
+    </section>
+
+    <!-- Rutin -->
+    <section data-page="routines">
+      <div class="page-head"><div><h1>Rutin &amp; kategori</h1><p>Setiap rutin jadi satu tab di laman utama.</p></div>
+        <button class="btn" data-add="routines">Tambah rutin</button></div>
+      <table>
+        <thead><tr><th>Tab</th><th>Tajuk</th><th>Masa</th><th>Produk</th><th>Susunan</th><th></th></tr></thead>
+        <tbody id="rRows"></tbody>
+      </table>
+    </section>
+
+    <!-- Ulasan -->
+    <section data-page="reviews">
+      <div class="page-head"><div><h1>Ulasan</h1><p>Masukkan ulasan sebenar daripada followers. Sembunyikan yang awak tak nak papar.</p></div>
+        <button class="btn" data-add="reviews">Tambah ulasan</button></div>
+      <div class="review-list" id="vList"></div>
+    </section>
+
+    <!-- Tetapan -->
+    <section data-page="settings">
+      <div class="page-head"><div><h1>Tetapan laman</h1><p>Teks utama, bahagian tentang saya dan pendedahan affiliate.</p></div></div>
+      <form class="panel" id="settingsForm">
+        <div class="form-grid" id="settingsFields"></div>
+        <div style="margin-top:1.25rem"><button class="btn" type="submit">Simpan tetapan</button></div>
+      </form>
+    </section>
+
+    <!-- Data -->
+    <section data-page="data">
+      <div class="page-head"><div><h1>Backup data</h1><p>Simpan salinan, pindah ke browser lain, atau mula semula.</p></div></div>
+      <div class="panel">
+        <h2>Export &amp; import</h2>
+        <p>Muat turun semua produk, rutin, ulasan dan tetapan sebagai fail JSON. Fail ni juga yang developer guna untuk publish laman.</p>
+        <div class="toolbar">
+          <button class="btn" id="exportBtn">Muat turun backup</button>
+          <label class="btn ghost" for="importFile">Import backup</label>
+          <input type="file" id="importFile" accept="application/json,.json" hidden>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Data contoh</h2>
+        <p>Produk dan ulasan sekarang ialah contoh rekaan untuk mockup. Padam sebelum masukkan produk dan ulasan sebenar.</p>
+        <div class="toolbar">
+          <button class="btn danger" id="clearSample">Padam produk &amp; ulasan contoh</button>
+          <button class="btn ghost" id="resetSample">Pulihkan data contoh</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<dialog id="dlg">
+  <form method="dialog" id="dlgForm">
+    <div class="dlg-head"><h2 id="dlgTitle"></h2><button class="x" type="button" aria-label="Tutup" onclick="this.closest('dialog').close()">&times;</button></div>
+    <div class="dlg-body"><div class="form-grid" id="dlgFields"></div></div>
+    <div class="dlg-foot">
+      <button class="btn ghost" type="button" onclick="this.closest('dialog').close()">Batal</button>
+      <button class="btn" value="save" id="dlgSave">Simpan</button>
+    </div>
+  </form>
+</dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="data.js"></script>
+<script>
+  let D = loadData();
+  const $ = id => document.getElementById(id);
+  const uid = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())).slice(0, 8);
+  const routineOpts = () => [...D.routines].sort(byOrder).map(r => [r.id, r.label]);
+  const routineName = id => (D.routines.find(r => r.id === id) || {}).label || "Tiada rutin";
+
+  // Field schemas drive both the dialog forms and saving.
+  const SCHEMA = {
+    products: {
+      title: ["Tambah produk", "Edit produk"], saved: "Produk disimpan",
+      fields: [
+        { k: "name", l: "Nama produk", req: true, full: true },
+        { k: "brand", l: "Jenama", req: true },
+        { k: "routine", l: "Rutin / kategori", type: "select", opts: routineOpts },
+        { k: "desc", l: "Kenapa saya suka", type: "textarea", full: true, hint: "Satu dua ayat, cara awak cakap dengan followers." },
+        { k: "link", l: "Link affiliate Shopee", type: "url", full: true, hint: "Contoh: https://s.shopee.com.my/..." },
+        { k: "price", l: "Harga (RM)", type: "number", step: "0.01", min: 0 },
+        { k: "size", l: "Saiz", hint: "Contoh: 50ml" },
+        { k: "rating", l: "Rating Shopee", type: "number", step: "0.1", min: 0, max: 5 },
+        { k: "count", l: "Bilangan ulasan Shopee", hint: "Contoh: 2.1k" },
+        { k: "type", l: "Bentuk botol", type: "select", opts: () => PACK_TYPES.map(t => [t, { tube: "Tiub", pump: "Pam", dropper: "Dropper", jar: "Balang", compact: "Compact", stick: "Stick" }[t]]) },
+        { k: "color", l: "Warna botol", type: "color" },
+        { k: "order", l: "Step ke-", type: "number", min: 1 },
+        { k: "active", l: "Papar di laman", type: "checkbox" }
+      ],
+      blank: () => ({ routine: (routineOpts()[0] || [""])[0], type: "tube", color: "#F3C6CF", order: 1, active: true, price: 0 })
+    },
+    routines: {
+      title: ["Tambah rutin", "Edit rutin"], saved: "Rutin disimpan",
+      fields: [
+        { k: "label", l: "Nama tab", req: true, hint: "Pendek. Contoh: Berminyak" },
+        { k: "when", l: "Masa", hint: "Contoh: Pagi & malam" },
+        { k: "title", l: "Tajuk rutin", req: true, full: true },
+        { k: "intro", l: "Pengenalan", type: "textarea", full: true },
+        { k: "tip", l: "Tip", type: "textarea", full: true },
+        { k: "order", l: "Susunan tab", type: "number", min: 1 }
+      ],
+      blank: () => ({ order: D.routines.length + 1 })
+    },
+    reviews: {
+      title: ["Tambah ulasan", "Edit ulasan"], saved: "Ulasan disimpan",
+      fields: [
+        { k: "name", l: "Nama", req: true, hint: "Nama pertama dan huruf awal. Contoh: Aina R." },
+        { k: "city", l: "Bandar" },
+        { k: "routine", l: "Rutin", type: "select", opts: routineOpts },
+        { k: "stars", l: "Bintang", type: "number", step: "0.5", min: 1, max: 5, req: true },
+        { k: "text", l: "Ulasan", type: "textarea", full: true, req: true, hint: "Salin daripada komen atau DM sebenar, dengan izin mereka." },
+        { k: "visible", l: "Papar di laman", type: "checkbox" }
+      ],
+      blank: () => ({ stars: 5, visible: true, routine: (routineOpts()[0] || [""])[0] })
+    }
+  };
+  const SETTINGS = [
+    { k: "line1", l: "Tajuk utama, baris 1", req: true },
+    { k: "line2", l: "Tajuk utama, baris 2" },
+    { k: "lede", l: "Ayat pengenalan", type: "textarea", full: true },
+    { k: "likes", l: "Statistik likes", hint: "Contoh: 1.5K" },
+    { k: "threads", l: "Link Threads", type: "url" },
+    { k: "aboutTitle", l: "Tajuk tentang saya" },
+    { k: "about", l: "Tentang saya", type: "textarea", full: true },
+    { k: "disclosure", l: "Pendedahan affiliate", type: "textarea", full: true, hint: "Wajib ada bila guna link affiliate." },
+    { k: "draft", l: "Tunjuk banner draf mockup", type: "checkbox" }
+  ];
+
+  function fieldHTML(f, v) {
+    const id = "f-" + f.k, req = f.req ? "required" : "";
+    const hint = f.hint ? `<span class="hint">${esc(f.hint)}</span>` : "";
+    if (f.type === "checkbox")
+      return `<div class="field check full"><input type="checkbox" id="${id}" name="${f.k}" ${v ? "checked" : ""}><label for="${id}">${esc(f.l)}</label></div>`;
+    let input;
+    if (f.type === "select") input = `<select id="${id}" name="${f.k}">${f.opts().map(([val, lab]) => `<option value="${esc(val)}" ${val === v ? "selected" : ""}>${esc(lab)}</option>`).join("")}</select>`;
+    else if (f.type === "textarea") input = `<textarea id="${id}" name="${f.k}" ${req}>${esc(v)}</textarea>`;
+    else input = `<input id="${id}" name="${f.k}" type="${f.type || "text"}" value="${esc(v ?? "")}" ${req} ${f.step ? `step="${f.step}"` : ""} ${f.min != null ? `min="${f.min}"` : ""} ${f.max != null ? `max="${f.max}"` : ""}>`;
+    return `<div class="field ${f.full ? "full" : ""}"><label for="${id}">${esc(f.l)}${f.req ? " *" : ""}</label>${input}${hint}</div>`;
+  }
+  function readFields(fields, root) {
+    const out = {};
+    fields.forEach(f => {
+      const el = root.querySelector(`[name="${f.k}"]`);
+      out[f.k] = f.type === "checkbox" ? el.checked : f.type === "number" ? (el.value === "" ? null : Number(el.value)) : el.value.trim();
+    });
+    return out;
+  }
+
+  function persist(msg) {
+    if (!saveData(D)) return toast("Tak dapat simpan. Storan browser penuh atau disekat.");
+    renderAll();
+    if (msg) toast(msg);
+  }
+  let toastT;
+  function toast(msg) {
+    const t = $("toast"); t.textContent = msg; t.classList.add("show");
+    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 2200);
+  }
+
+  // Add / edit dialog
+  const dlg = $("dlg");
+  let editing = null;
+  function openEditor(kind, id) {
+    const sc = SCHEMA[kind];
+    if (kind !== "routines" && !D.routines.length) return toast("Tambah rutin dulu sebelum tambah " + (kind === "products" ? "produk" : "ulasan"));
+    const item = id ? D[kind].find(x => x.id === id) : sc.blank();
+    editing = { kind, id };
+    $("dlgTitle").textContent = sc.title[id ? 1 : 0];
+    $("dlgFields").innerHTML = sc.fields.map(f => fieldHTML(f, item[f.k])).join("");
+    dlg.showModal();
+  }
+  $("dlgForm").addEventListener("submit", e => {
+    if (e.submitter?.value !== "save") return;
+    const { kind, id } = editing, sc = SCHEMA[kind];
+    const vals = readFields(sc.fields, $("dlgFields"));
+    if (vals.link && !/^https?:\/\//i.test(vals.link)) { e.preventDefault(); return toast("Link mesti bermula dengan https://"); }
+    if (id) Object.assign(D[kind].find(x => x.id === id), vals);
+    else D[kind].push({ id: uid(), ...vals });
+    persist(sc.saved);
+  });
+  document.querySelectorAll("[data-add]").forEach(b => b.addEventListener("click", () => openEditor(b.dataset.add)));
+
+  function remove(kind, id) {
+    if (kind === "routines" && D.products.some(p => p.routine === id))
+      return toast("Pindahkan atau padam produk dalam rutin ni dulu");
+    if (!confirm("Padam item ni? Tindakan ni tak boleh dibatalkan.")) return;
+    D[kind] = D[kind].filter(x => x.id !== id);
+    persist("Dipadam");
+  }
+  document.addEventListener("click", e => {
+    const b = e.target.closest("[data-act]"); if (!b) return;
+    const { act, kind, id } = b.dataset;
+    if (act === "edit") openEditor(kind, id);
+    if (act === "del") remove(kind, id);
+    if (act === "toggle") { const x = D[kind].find(i => i.id === id); const k = kind === "reviews" ? "visible" : "active"; x[k] = !x[k]; persist(x[k] ? "Dipaparkan" : "Disembunyikan"); }
+    if (act === "go") show(b.dataset.view);
+  });
+
+  // Views
+  const rowBtns = (kind, id, toggle) => `<div class="actions">
+    ${toggle ? `<button class="btn ghost sm" data-act="toggle" data-kind="${kind}" data-id="${id}">${toggle}</button>` : ""}
+    <button class="btn ghost sm" data-act="edit" data-kind="${kind}" data-id="${id}">Edit</button>
+    <button class="btn danger sm" data-act="del" data-kind="${kind}" data-id="${id}">Padam</button></div>`;
+
+  function renderHome() {
+    const noLink = D.products.filter(p => !p.link);
+    const hidden = D.reviews.filter(r => !r.visible);
+    const emptyR = D.routines.filter(r => !D.products.some(p => p.routine === r.id && p.active !== false));
+    $("stats").innerHTML = [
+      [D.products.length, "produk"], [D.routines.length, "rutin"],
+      [D.reviews.filter(r => r.visible).length, "ulasan dipaparkan"],
+      [noLink.length, "produk tiada link", noLink.length > 0]
+    ].map(([n, l, a]) => `<div class="stat ${a ? "alert" : ""}"><b>${n}</b><span>${l}</span></div>`).join("");
+    const items = [];
+    if (D.settings.draft) items.push(["Banner draf mockup masih dipaparkan", "settings", "Tetapan"]);
+    if (noLink.length) items.push([`${noLink.length} produk belum ada link affiliate Shopee`, "products", "Tambah link"]);
+    emptyR.forEach(r => items.push([`Rutin "${r.label}" belum ada produk`, "products", "Tambah produk"]));
+    if (hidden.length) items.push([`${hidden.length} ulasan disembunyikan`, "reviews", "Semak"]);
+    $("todo").innerHTML = items.length
+      ? items.map(([t, v, b]) => `<li><span>${esc(t)}</span><button class="btn ghost sm" data-act="go" data-view="${v}">${b}</button></li>`).join("")
+      : `<li class="ok">Semua dah lengkap. Laman sedia untuk dikongsi.</li>`;
+  }
+
+  function renderProducts() {
+    const q = $("pSearch").value.toLowerCase(), f = $("pFilter").value;
+    const cur = f;
+    $("pFilter").innerHTML = `<option value="">Semua rutin</option>` + routineOpts().map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join("");
+    $("pFilter").value = cur;
+    const rows = D.products
+      .filter(p => (!f || p.routine === f) && (!q || (p.name + " " + p.brand).toLowerCase().includes(q)))
+      .sort((a, b) => routineName(a.routine).localeCompare(routineName(b.routine)) || byOrder(a, b));
+    $("pRows").innerHTML = rows.length ? rows.map(p => `
+      <tr class="${p.active === false ? "off" : ""}">
+        <td><div class="pname"><span class="swatch" style="background:${esc(p.color)}"></span><span>${esc(p.name)}<small>${esc(p.brand)}</small></span></div></td>
+        <td data-l="Rutin"><span class="pill">${esc(routineName(p.routine))}</span></td>
+        <td data-l="Step">${esc(p.order)}</td>
+        <td data-l="Harga">RM${Number(p.price || 0).toFixed(2)}</td>
+        <td data-l="Link">${p.link ? '<span class="pill ok">Ada</span>' : '<span class="pill warn">Tiada link</span>'}</td>
+        <td>${rowBtns("products", p.id, p.active === false ? "Papar" : "Sembunyi")}</td>
+      </tr>`).join("") : `<tr><td colspan="6" class="empty-row">Tiada produk lagi. Tekan "Tambah produk" untuk mula.</td></tr>`;
+  }
+
+  function renderRoutines() {
+    const rows = [...D.routines].sort(byOrder);
+    $("rRows").innerHTML = rows.length ? rows.map(r => `
+      <tr>
+        <td><strong>${esc(r.label)}</strong></td>
+        <td data-l="Tajuk">${esc(r.title)}</td>
+        <td data-l="Masa">${esc(r.when)}</td>
+        <td data-l="Produk">${D.products.filter(p => p.routine === r.id).length}</td>
+        <td data-l="Susunan">${esc(r.order)}</td>
+        <td>${rowBtns("routines", r.id)}</td>
+      </tr>`).join("") : `<tr><td colspan="6" class="empty-row">Tiada rutin lagi. Tekan "Tambah rutin" untuk mula.</td></tr>`;
+  }
+
+  function renderReviews() {
+    $("vList").innerHTML = D.reviews.length ? D.reviews.map(r => `
+      <article class="review-card ${r.visible ? "" : "off"}">
+        <div style="display:flex;justify-content:space-between;gap:.5rem;align-items:center">
+          <span class="stars" aria-label="${Number(r.stars)} bintang">${"★".repeat(Math.round(r.stars))}</span>
+          <span class="pill">${esc(routineName(r.routine))}</span>
+        </div>
+        <p>${esc(r.text)}</p>
+        <span class="who">${esc(r.name)}${r.city ? ", " + esc(r.city) : ""}${r.visible ? "" : " (disembunyikan)"}</span>
+        ${rowBtns("reviews", r.id, r.visible ? "Sembunyi" : "Papar")}
+      </article>`).join("") : `<p class="panel">Tiada ulasan lagi. Bahagian ulasan disembunyikan dari laman sampai awak tambah satu.</p>`;
+  }
+
+  function renderSettings() {
+    $("settingsFields").innerHTML = SETTINGS.map(f => fieldHTML(f, D.settings[f.k])).join("");
+  }
+  $("settingsForm").addEventListener("submit", e => {
+    e.preventDefault();
+    Object.assign(D.settings, readFields(SETTINGS, $("settingsFields")));
+    persist("Tetapan disimpan");
+  });
+
+  function renderAll() {
+    $("cProducts").textContent = D.products.length;
+    $("cRoutines").textContent = D.routines.length;
+    $("cReviews").textContent = D.reviews.length;
+    renderHome(); renderProducts(); renderRoutines(); renderReviews(); renderSettings();
+  }
+  $("pSearch").addEventListener("input", renderProducts);
+  $("pFilter").addEventListener("change", renderProducts);
+
+  // Backup
+  $("exportBtn").addEventListener("click", () => {
+    const blob = new Blob([JSON.stringify(D, null, 2)], { type: "application/json" });
+    const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: "cherry-backup.json" });
+    a.click(); URL.revokeObjectURL(a.href);
+  });
+  $("importFile").addEventListener("change", async e => {
+    const file = e.target.files[0]; if (!file) return;
+    try {
+      const data = JSON.parse(await file.text());
+      if (!Array.isArray(data.products) || !Array.isArray(data.routines) || !Array.isArray(data.reviews) || !data.settings) throw 0;
+      if (!confirm("Ganti semua data sekarang dengan fail ni?")) return;
+      D = data; persist("Backup diimport");
+    } catch { toast("Fail tak sah. Guna fail backup daripada panel ni."); }
+    e.target.value = "";
+  });
+  $("clearSample").addEventListener("click", () => {
+    if (!confirm("Padam semua produk dan ulasan? Rutin dan tetapan kekal.")) return;
+    D.products = []; D.reviews = []; persist("Data contoh dipadam");
+  });
+  $("resetSample").addEventListener("click", () => {
+    if (!confirm("Ganti semua data dengan data contoh asal?")) return;
+    D = structuredClone(SAMPLE_DATA); persist("Data contoh dipulihkan");
+  });
+
+  // Navigation
+  function show(view) {
+    document.querySelectorAll("[data-page]").forEach(s => s.hidden = s.dataset.page !== view);
+    document.querySelectorAll(".side-nav [data-view]").forEach(b => b.removeAttribute("aria-current"));
+    document.querySelector(`.side-nav [data-view="${view}"]`)?.setAttribute("aria-current", "page");
+    history.replaceState(null, "", "#" + view);
+    scrollTo(0, 0);
+  }
+  document.querySelectorAll(".side-nav [data-view]").forEach(b => b.addEventListener("click", () => show(b.dataset.view)));
+
+  renderAll();
+  show(SCHEMA[location.hash.slice(1)] || ["home", "settings", "data"].includes(location.hash.slice(1)) ? location.hash.slice(1) : "home");
+</script>
+</body>
+</html>

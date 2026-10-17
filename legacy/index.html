@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rutin Cherry</title>
+<meta name="description" content="Rutin skincare dan makeup penuh @cherrryyyii, dengan semua link Shopee dalam satu tempat.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gloock&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --milk: #FDF7F8;
+    --cherry: #B81D38;
+    --cherry-deep: #7E1428;
+    --blush: #F7DCE1;
+    --stem: #2F4A3A;
+    --haze: #E6E0DC;
+    --ink: #24161A;
+    --muted: #6E5C61;
+    --display: "Gloock", Georgia, serif;
+    --body: "Figtree", system-ui, sans-serif;
+    --ease: cubic-bezier(.2, .8, .2, 1);
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--milk);
+    color: var(--ink);
+    font: 400 1rem/1.55 var(--body);
+    overflow-x: hidden;
+  }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--cherry); outline-offset: 3px; }
+  .wrap { max-width: 90rem; margin: 0 auto; padding: 0 clamp(1rem, 4vw, 3.5rem); }
+
+  .draft {
+    background: var(--stem);
+    color: #fff;
+    text-align: center;
+    font-size: .8125rem;
+    padding: .5rem 1rem;
+  }
+
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: color-mix(in srgb, var(--milk) 88%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--haze);
+  }
+  .bar { display: flex; align-items: center; justify-content: space-between; height: 4rem; }
+  .wordmark { font: 1.75rem/1 var(--display); text-decoration: none; letter-spacing: -.01em; }
+  .wordmark span { color: var(--cherry); }
+  .empty { padding: 2rem; border: 1px dashed var(--haze); border-radius: 18px; color: var(--muted); text-align: center; }
+  nav { display: flex; gap: 1.25rem; font-size: .9375rem; font-weight: 500; }
+  nav a { text-decoration: none; padding: .5rem 0; }
+  nav a:hover { color: var(--cherry); }
+
+  /* Hero */
+  .hero { position: relative; padding: 3rem 0 2rem; isolation: isolate; overflow-x: clip; }
+  .hero::before, .hero::after {
+    content: ""; position: absolute; z-index: -1; border-radius: 50%;
+    filter: blur(60px); opacity: .55; pointer-events: none;
+  }
+  .hero::before { width: 26rem; height: 26rem; background: var(--blush); top: -6rem; right: -6rem; animation: drift 24s ease-in-out infinite alternate; }
+  .hero::after { width: 18rem; height: 18rem; background: var(--haze); bottom: 0; left: -6rem; animation: drift 30s ease-in-out infinite alternate-reverse; }
+  @keyframes drift { to { transform: translate(-3rem, 2rem) scale(1.1); } }
+
+  .hero-grid { display: grid; gap: 2.5rem; align-items: end; }
+  .hero h1 {
+    font: clamp(2.6rem, 9vw, 5rem)/1 var(--display);
+    letter-spacing: -.025em;
+    margin: 0 0 1.25rem;
+  }
+  .hero h1 .line { display: block; overflow: hidden; padding-bottom: .06em; }
+  .hero h1 .line > span { display: block; animation: rise .9s var(--ease) both; }
+  .hero h1 .line:nth-child(2) > span { animation-delay: .12s; }
+  .hero .lede { margin: 0; max-width: 36rem; color: var(--muted); font-size: 1.0625rem; animation: fade .8s .35s both; }
+  @keyframes rise { from { transform: translateY(105%); } }
+  @keyframes fade { from { opacity: 0; transform: translateY(8px); } }
+
+  .proof { display: flex; gap: 1.75rem; margin: 1.75rem 0 0; padding: 0; list-style: none; animation: fade .8s .5s both; }
+  .proof b { display: block; font: 1.75rem/1 var(--display); font-weight: 400; }
+  .proof span { display: block; margin-top: .35rem; font-size: .8125rem; line-height: 1.3; color: var(--muted); }
+
+  /* The shelf: illustrated products that restack per routine */
+  .shelf {
+    position: relative;
+    display: flex; align-items: flex-end; justify-content: center; gap: clamp(.6rem, 2.5vw, 1.4rem);
+    min-height: 15rem;
+    padding: 0 1rem 1.25rem;
+  }
+  .shelf::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1.25rem;
+    background: linear-gradient(#fff, var(--haze));
+    border-radius: 6px;
+    box-shadow: 0 18px 30px -18px rgba(36, 22, 26, .45);
+  }
+  .shelf .pack { animation: drop .7s var(--ease) both; animation-delay: calc(var(--i) * 70ms + .25s); }
+  .shelf.live .pack { animation-delay: calc(var(--i) * 70ms); }
+  @keyframes drop { from { opacity: 0; transform: translateY(-40px) rotate(-4deg); } }
+
+  .pack {
+    --c: var(--blush);
+    position: relative; flex: none;
+    background: linear-gradient(100deg, rgba(255,255,255,.55), rgba(255,255,255,0) 40%), var(--c);
+    box-shadow: inset -6px 0 10px rgba(0,0,0,.06);
+  }
+  .pack::before, .pack::after { content: ""; position: absolute; left: 50%; transform: translateX(-50%); }
+  .pack i {
+    position: absolute; left: 12%; right: 12%; top: 42%;
+    font: 700 .5rem/1.2 var(--body); font-style: normal; text-align: center;
+    color: rgba(36,22,26,.7); letter-spacing: .02em;
+  }
+  .pack.tube { width: 3.1rem; height: 8.5rem; border-radius: 1.2rem 1.2rem .35rem .35rem; }
+  .pack.tube::after { bottom: -0px; width: 70%; height: 1.4rem; background: var(--ink); border-radius: .3rem; transform: translate(-50%, 0); }
+  .pack.tube i { top: 30%; }
+  .pack.dropper { width: 3.4rem; height: 5.4rem; border-radius: .9rem; margin-top: 2.6rem; }
+  .pack.dropper::before { top: -2.4rem; width: 1.2rem; height: 2.5rem; background: var(--ink); border-radius: .6rem .6rem .2rem .2rem; }
+  .pack.jar { width: 5rem; height: 3.6rem; border-radius: .7rem .7rem 1rem 1rem; margin-top: 1.2rem; }
+  .pack.jar::before { top: -1.1rem; width: 105%; height: 1.2rem; background: var(--ink); border-radius: .4rem; }
+  .pack.jar i { top: 34%; }
+  .pack.pump { width: 3.3rem; height: 7rem; border-radius: 1rem; margin-top: 2rem; }
+  .pack.pump::before { top: -1.1rem; width: 1rem; height: 1.2rem; background: var(--ink); border-radius: .2rem; }
+  .pack.pump::after { top: -1.6rem; width: 1.9rem; height: .6rem; background: var(--ink); border-radius: .3rem .3rem 0 0; transform: translateX(-30%); }
+  .pack.compact { width: 4.4rem; height: 4.4rem; border-radius: 50%; }
+  .pack.compact::before { inset: 22%; left: 22%; transform: none; border-radius: 50%; background: rgba(255,255,255,.45); }
+  .pack.compact i { top: 40%; z-index: 1; }
+  .pack.stick { width: 1.8rem; height: 6.4rem; border-radius: .4rem; margin-top: 1.6rem; }
+  .pack.stick::before { top: -1.5rem; width: 100%; height: 1.6rem; background: var(--ink); border-radius: .4rem .4rem .1rem .1rem; }
+  .pack.stick i { display: none; }
+
+  /* Picker */
+  .picker-wrap { padding: 1rem 0 0; }
+  .picker {
+    display: flex; gap: .5rem; overflow-x: auto; scroll-snap-type: x mandatory;
+    padding: .25rem .1rem .75rem; margin: 0 calc(-1 * clamp(1rem, 4vw, 3.5rem)); padding-inline: clamp(1rem, 4vw, 3.5rem);
+    scrollbar-width: none;
+  }
+  .picker::-webkit-scrollbar { display: none; }
+  .picker button {
+    flex: 0 0 auto; scroll-snap-align: start;
+    font: inherit; text-align: left; cursor: pointer;
+    background: #fff; color: var(--ink);
+    border: 1px solid var(--haze); border-radius: 999px;
+    padding: .7rem 1.2rem; min-height: 44px;
+    font-weight: 600; font-size: .9375rem;
+    transition: background .2s, color .2s, border-color .2s, transform .2s var(--ease);
+  }
+  .picker button:hover { border-color: var(--cherry); }
+  .picker button:active { transform: scale(.97); }
+  .picker button[aria-selected="true"] { background: var(--cherry); border-color: var(--cherry); color: #fff; }
+
+  /* Routine */
+  .kit { padding: 2rem 0 1rem; }
+  .kit-head { display: flex; justify-content: space-between; align-items: end; gap: 1rem; flex-wrap: wrap; margin-bottom: .5rem; }
+  .kit h2 { font: clamp(1.9rem, 5vw, 2.6rem)/1.05 var(--display); margin: 0; letter-spacing: -.015em; }
+  .total { text-align: right; font-size: .875rem; color: var(--muted); }
+  .total b { display: block; font: 1.5rem/1.1 var(--display); font-weight: 400; color: var(--ink); }
+  .kit .intro { color: var(--muted); margin: 0 0 1.5rem; max-width: 38rem; }
+
+  ol.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
+  .card {
+    display: grid; grid-template-columns: 5.5rem 1fr; gap: 1rem 1.25rem;
+    padding: 1.25rem;
+    background: #fff;
+    border: 1px solid var(--haze);
+    border-radius: 18px;
+    animation: fade .55s var(--ease) both;
+    animation-delay: calc(var(--i) * 60ms);
+    transition: border-color .2s, transform .25s var(--ease), box-shadow .25s;
+  }
+  .card:hover { border-color: #E9C3CB; transform: translateY(-2px); box-shadow: 0 14px 30px -20px rgba(126, 20, 40, .35); }
+  .thumb {
+    position: relative; display: flex; align-items: flex-end; justify-content: center;
+    height: 7.5rem; border-radius: 12px; background: var(--milk);
+    padding-bottom: .6rem; overflow: hidden;
+  }
+  .thumb .pack { transform: scale(.72); transform-origin: bottom center; }
+  .step-no { position: absolute; top: .35rem; left: .55rem; font: 1.4rem/1 var(--display); color: var(--cherry); }
+  .meta { min-width: 0; }
+  .brand { font-size: .8125rem; color: var(--muted); font-weight: 500; margin: 0; }
+  .card h3 { font: 600 1.0625rem/1.3 var(--body); margin: .1rem 0 .35rem; }
+  .rating { display: flex; align-items: center; gap: .4rem; font-size: .8125rem; color: var(--muted); margin-bottom: .5rem; }
+  .stars { --r: 4.8; position: relative; display: inline-block; font-size: .85rem; letter-spacing: 1px; line-height: 1; color: var(--haze); }
+  .stars::before { content: "★★★★★"; }
+  .stars::after { content: "★★★★★"; position: absolute; left: 0; top: 0; color: #E0A526; overflow: hidden; width: calc(var(--r) / 5 * 100%); }
+  .why { margin: 0; font-size: .9375rem; color: var(--ink); }
+  .buyrow { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; padding-top: .75rem; border-top: 1px dashed var(--haze); }
+  .price { font-weight: 700; font-size: 1.0625rem; }
+  .price small { font-weight: 400; color: var(--muted); font-size: .8125rem; margin-left: .3rem; }
+  .buy {
+    display: inline-flex; align-items: center; gap: .45rem;
+    min-height: 44px; padding: .55rem 1.15rem; border-radius: 999px;
+    background: var(--ink); color: #fff; text-decoration: none;
+    font-weight: 600; font-size: .9375rem;
+    transition: background .2s;
+  }
+  .buy:hover { background: var(--cherry); }
+  .buy svg { width: 1rem; height: 1rem; transition: transform .2s var(--ease); }
+  .buy:hover svg { transform: translate(2px, -2px); }
+
+  .note {
+    margin: 1.5rem 0 0; padding: 1.1rem 1.25rem;
+    background: #EEF3EF; border-radius: 14px;
+    font-size: .9375rem; color: var(--stem);
+  }
+
+  /* Reviews */
+  .reviews { padding: 4rem 0 2rem; }
+  .reviews-head { display: grid; gap: 1rem; margin-bottom: 1.5rem; }
+  .reviews h2 { font: clamp(1.9rem, 5vw, 2.6rem)/1.05 var(--display); margin: 0; letter-spacing: -.015em; }
+  .score { display: flex; align-items: center; gap: 1rem; }
+  .score b { font: 3.5rem/1 var(--display); font-weight: 400; color: var(--cherry); }
+  .score .stars { font-size: 1.1rem; }
+  .score p { margin: .2rem 0 0; font-size: .875rem; color: var(--muted); }
+  .rv-row {
+    display: grid; grid-auto-flow: column; grid-auto-columns: min(85%, 21rem);
+    gap: 1rem; overflow-x: auto; scroll-snap-type: x mandatory;
+    margin: 0 calc(-1 * clamp(1rem, 4vw, 3.5rem)); padding: .25rem clamp(1rem, 4vw, 3.5rem) 1rem; scrollbar-width: thin;
+  }
+  .rv {
+    scroll-snap-align: start;
+    display: flex; flex-direction: column; gap: .75rem;
+    background: #fff; border: 1px solid var(--haze); border-radius: 18px; padding: 1.25rem;
+  }
+  .rv blockquote { margin: 0; font-size: 1rem; }
+  .rv footer { margin-top: auto; display: flex; align-items: center; gap: .7rem; font-size: .8125rem; color: var(--muted); }
+  .avatar { width: 2.25rem; height: 2.25rem; border-radius: 50%; display: grid; place-items: center; font-weight: 700; color: #fff; flex: none; }
+  .rv footer strong { display: block; color: var(--ink); font-size: .875rem; }
+  .tag { align-self: flex-start; font-size: .75rem; font-weight: 600; padding: .2rem .6rem; border-radius: 999px; background: var(--blush); color: var(--cherry-deep); }
+
+  /* About */
+  .about { display: grid; gap: 1.5rem; padding: 3rem 0 4rem; border-top: 1px solid var(--haze); margin-top: 2rem; }
+  .about h2 { font: clamp(1.9rem, 5vw, 2.6rem)/1.05 var(--display); margin: 0; }
+  .about p { margin: 0 0 1rem; max-width: 34rem; }
+  .follow {
+    display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; padding: .55rem 1.2rem;
+    border: 1.5px solid var(--ink); border-radius: 999px; text-decoration: none; font-weight: 600;
+    transition: background .2s, color .2s;
+  }
+  .follow:hover { background: var(--ink); color: #fff; }
+
+  .site-foot { background: var(--ink); color: #E9DDE0; padding: 2rem 0; font-size: .8125rem; }
+  .site-foot p { margin: 0 0 .5rem; max-width: 40rem; }
+
+  @media (min-width: 720px) {
+    .hero { padding: 5rem 0 3rem; }
+    ol.steps { grid-template-columns: 1fr 1fr; }
+    .reviews-head { grid-template-columns: 1fr auto; align-items: end; }
+    .about { grid-template-columns: 1fr 1.4fr; }
+  }
+  @media (min-width: 960px) {
+    .hero-grid { grid-template-columns: 1.1fr 1fr; }
+    .rv-row { grid-auto-flow: row; grid-template-columns: repeat(2, 1fr); overflow: visible; margin: 0; padding: .25rem 0 1rem; }
+    .shelf { min-height: 18rem; }
+  }
+  @media (min-width: 1200px) {
+    ol.steps { grid-template-columns: repeat(3, 1fr); }
+    .rv-row { grid-template-columns: repeat(4, 1fr); }
+    .shelf { zoom: 1.3; }
+    .hero h1 { font-size: clamp(3.75rem, 5vw, 5.5rem); }
+  }
+  @media (max-width: 480px) {
+    nav { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    html { scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="draft" id="draft">Draf mockup untuk @cherrryyyii. Jenama, harga dan ulasan ialah contoh rekaan.</div>
+
+<header>
+  <div class="wrap bar">
+    <a class="wordmark" href="#">cherr<span>yyy</span>ii</a>
+    <nav aria-label="Utama">
+      <a href="#rutin">Rutin</a>
+      <a href="#ulasan">Ulasan</a>
+      <a href="#tentang">Tentang</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <h1><span class="line"><span id="line1"></span></span><span class="line"><span id="line2"></span></span></h1>
+        <p class="lede" id="lede"></p>
+        <ul class="proof">
+          <li><b id="statLikes"></b><span>likes untuk satu post rutin</span></li>
+          <li><b id="statRoutines"></b><span>rutin lengkap</span></li>
+          <li><b id="statProducts"></b><span>produk yang saya pakai</span></li>
+        </ul>
+      </div>
+      <div class="shelf" id="shelf" aria-hidden="true"></div>
+    </div>
+  </section>
+
+  <section class="wrap" id="rutin">
+    <div class="picker-wrap">
+      <div class="picker" id="picker" role="tablist" aria-label="Pilih rutin"></div>
+    </div>
+    <div class="kit" id="kit" role="tabpanel"></div>
+  </section>
+
+  <section class="wrap reviews" id="ulasan">
+    <div class="reviews-head">
+      <h2>Apa kata followers yang dah cuba</h2>
+      <div class="score" id="score"></div>
+    </div>
+    <div class="rv-row" id="reviews"></div>
+  </section>
+
+  <section class="wrap about" id="tentang">
+    <h2 id="aboutTitle"></h2>
+    <div>
+      <p id="about"></p>
+      <a class="follow" id="threads" href="#">Ikut saya di Threads</a>
+    </div>
+  </section>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <p id="disclosure"></p>
+    <p>&copy; 2026 cherrryyyii</p>
+  </div>
+</footer>
+
+<script src="data.js"></script>
+<script>
+  const D = loadData();
+  const S = D.settings;
+  const $ = id => document.getElementById(id);
+  const routines = [...D.routines].sort(byOrder);
+  const active = D.products.filter(p => p.active !== false);
+  const AVATAR = ["#B81D38", "#2F4A3A", "#C2847A", "#6B5B8E", "#3D6B7A"];
+
+  $("draft").hidden = !S.draft;
+  $("line1").textContent = S.line1;
+  $("line2").textContent = S.line2;
+  $("lede").textContent = S.lede;
+  $("statLikes").textContent = S.likes;
+  $("statRoutines").textContent = routines.length;
+  $("statProducts").textContent = new Set(active.map(p => p.brand + p.name)).size;
+  $("aboutTitle").textContent = S.aboutTitle;
+  $("about").textContent = S.about;
+  $("threads").href = safeUrl(S.threads);
+  $("disclosure").textContent = S.disclosure;
+
+  const arrow = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 11 11 5M6 5h5v5"/></svg>';
+  const rm = n => "RM" + Number(n || 0).toFixed(2);
+  const pack = (p, i) => `<span class="pack ${PACK_TYPES.includes(p.type) ? p.type : "tube"}" style="--c:${esc(p.color)};--i:${i}"><i>${esc(p.brand)}</i></span>`;
+  const shelf = $("shelf"), kitEl = $("kit"), picker = $("picker");
+
+  picker.innerHTML = routines.map((r, i) =>
+    `<button role="tab" data-kit="${esc(r.id)}" aria-selected="${i === 0}" ${i ? 'tabindex="-1"' : ""}>${esc(r.label)}</button>`).join("");
+  const tabs = [...picker.querySelectorAll('[role="tab"]')];
+
+  function render(key) {
+    const k = routines.find(r => r.id === key);
+    const items = active.filter(p => p.routine === key).sort(byOrder);
+    const total = items.reduce((s, p) => s + Number(p.price || 0), 0);
+    shelf.innerHTML = items.slice(0, 6).map(pack).join("");
+    kitEl.innerHTML = `
+      <div class="kit-head">
+        <h2>${esc(k.title)}</h2>
+        <div class="total"><b>${rm(total)}</b>${items.length} produk, ${esc(k.when).toLowerCase()}</div>
+      </div>
+      <p class="intro">${esc(k.intro)}</p>
+      ${items.length ? `<ol class="steps">${items.map((p, i) => `
+        <li class="card" style="--i:${i}">
+          <div class="thumb"><span class="step-no">${i + 1}</span>${pack(p, i)}</div>
+          <div class="meta">
+            <p class="brand">${esc(p.brand)}</p>
+            <h3>${esc(p.name)}</h3>
+            ${p.rating ? `<div class="rating"><span class="stars" style="--r:${Number(p.rating)}" aria-label="${Number(p.rating)} daripada 5"></span>${Number(p.rating)}${p.count ? ` (${esc(p.count)} ulasan)` : ""}</div>` : ""}
+            <p class="why">${esc(p.desc)}</p>
+          </div>
+          <div class="buyrow">
+            <span class="price">${rm(p.price)}<small>${esc(p.size)}</small></span>
+            <a class="buy" href="${esc(safeUrl(p.link))}" ${p.link ? 'target="_blank" rel="sponsored noopener"' : ""}>Beli di Shopee ${arrow}</a>
+          </div>
+        </li>`).join("")}
+      </ol>` : `<p class="empty">Produk untuk rutin ni akan ditambah tak lama lagi.</p>`}
+      ${k.tip ? `<p class="note">${esc(k.tip)}</p>` : ""}`;
+  }
+
+  function select(tab, focus) {
+    tabs.forEach(t => {
+      const on = t === tab;
+      t.setAttribute("aria-selected", on);
+      t.tabIndex = on ? 0 : -1;
+    });
+    kitEl.setAttribute("aria-label", tab.textContent);
+    render(tab.dataset.kit);
+    if (focus) tab.focus();
+  }
+
+  tabs.forEach((t, i) => {
+    t.addEventListener("click", () => select(t, false));
+    t.addEventListener("keydown", e => {
+      const d = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+      if (d) { e.preventDefault(); select(tabs[(i + d + tabs.length) % tabs.length], true); }
+    });
+  });
+  if (tabs.length) select(tabs[0], false);
+  else kitEl.innerHTML = '<p class="empty">Rutin akan ditambah tak lama lagi.</p>';
+  shelf.classList.add("live");
+
+  const reviews = D.reviews.filter(r => r.visible);
+  const label = id => (routines.find(r => r.id === id) || {}).label || "";
+  if (reviews.length) {
+    const avg = reviews.reduce((s, r) => s + Number(r.stars), 0) / reviews.length;
+    $("score").innerHTML = `<b>${avg.toFixed(1)}</b><div><span class="stars" style="--r:${avg}" aria-label="${avg.toFixed(1)} daripada 5"></span><p>Purata daripada ${reviews.length} ulasan</p></div>`;
+    $("reviews").innerHTML = reviews.map((r, i) => `
+      <article class="rv">
+        ${label(r.routine) ? `<span class="tag">${esc(label(r.routine))}</span>` : ""}
+        <span class="stars" style="--r:${Number(r.stars)}" aria-label="${Number(r.stars)} daripada 5"></span>
+        <blockquote>${esc(r.text)}</blockquote>
+        <footer><span class="avatar" style="background:${AVATAR[i % AVATAR.length]}">${esc((r.name || "?")[0])}</span><span><strong>${esc(r.name)}</strong>${esc(r.city)}</span></footer>
+      </article>`).join("");
+  } else {
+    $("ulasan").hidden = true;
+  }
+</script>
+</body>
+</html>

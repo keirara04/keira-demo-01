@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+/* Brand tokens — source of truth: docs/brand-guidelines.md */
+@theme {
+  --color-milk: #FDF7F8;
+  --color-blush: #F7E4E8;
+  --color-cherry: #B81D38;
+  --color-cherry-deep: #8E1229;
+  --color-stem: #2F4A3A;
+  --color-haze: #E6E0DC;
+  --color-ink: #24161A;
+  --color-muted: #6E5A60;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html { scroll-behavior: smooth; }
+body { background: var(--color-milk); color: var(--color-ink); font-family: var(--font-figtree), system-ui, sans-serif; }
+::selection { background: var(--color-cherry); color: var(--color-milk); }
+
+/* inline: next/font sets these vars on <body>, not :root */
+@theme inline {
+  --font-display: var(--font-gloock), Georgia, serif;
+  --font-sans: var(--font-figtree), system-ui, sans-serif;
+}
+
+/* Film grain over everything — the "comped in After Effects" texture. */
+.grain::after {
+  content: ""; position: fixed; inset: -50%; z-index: 60; pointer-events: none; opacity: .07;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grain 1s steps(6) infinite;
+}
+@keyframes grain {
+  0% { transform: translate(0, 0); } 20% { transform: translate(-3%, 2%); } 40% { transform: translate(2%, -3%); }
+  60% { transform: translate(-2%, -1%); } 80% { transform: translate(3%, 3%); } 100% { transform: translate(0, 0); }
+}
+
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .grain::after { animation: none; }
+}
