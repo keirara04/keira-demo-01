@@ -13,7 +13,8 @@
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; scrollbar-width: none; }
+html::-webkit-scrollbar { display: none; }
 :root { --gutter: clamp(1rem, 4vw, 5rem); }
 
 /* Full-width container: stretches edge to edge, capped only on ultra-wide screens. */
@@ -31,6 +32,8 @@ body { background: var(--color-milk); color: var(--color-ink); font-family: var(
   --font-display: var(--font-gloock), Georgia, serif;
   --font-sans: var(--font-figtree), system-ui, sans-serif;
 }
+
+
 
 /* Film grain over everything — the "comped in After Effects" texture. */
 .grain::after {

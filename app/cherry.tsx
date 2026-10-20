@@ -2,25 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
-import {
-  AnimatePresence,
-  MotionConfig,
-  animate,
-  motion,
-  useReducedMotion,
-  useScroll,
-  useTransform,
-  type Variants,
-} from "motion/react";
-import { DISCLOSURE, FAQ, SKIN_QUIZ, THREADS, posts, type Pack, type Product, type Review, type Routine } from "./data";
+import { AnimatePresence, MotionConfig, animate, motion, useReducedMotion, useScroll } from "motion/react";
+import { ABOUT, DISCLOSURE, FAQ, THREADS, posts, type Product, type Review, type Routine } from "./data";
 import { useSiteData } from "./store";
-import { CountUp, EASE, MaskLines, RevealWords } from "./motion";
+import { EASE, MaskLines } from "./motion";
 
+const ALL = "all";
 
-const ALL = "semua";
-
-/** "Semua" tab first: every affiliate product once (shared skincare items aren't repeated). */
+/** "All" tab first: every product once (shared skincare items aren't repeated), everyday ones first. */
 function withAllTab(routines: Routine[]): Routine[] {
   const seen = new Set<string>();
   const products = routines.flatMap((r) => r.products).filter((p) => {
@@ -30,137 +19,205 @@ function withAllTab(routines: Routine[]): Routine[] {
     return true;
   });
   if (!products.length) return routines;
-  return [
-    { id: ALL, tab: "Semua", title: "Semua produk saya", when: "Skincare & makeup",
-      intro: "Semua yang saya pakai dan recommend, dalam satu tempat.", tip: "", post: "", products },
-    ...routines,
-  ];
+  products.sort((a, b) => Number(!!b.core) - Number(!!a.core));
+  return [{ id: ALL, tab: "All products", title: "Everything I use", when: "", intro: "", tip: "", post: "", products }, ...routines];
+}
+
+/** Which of her sets a product belongs to, so a tile without a quote still says something true. */
+function setsFor(p: Product, routines: Routine[]) {
+  return routines
+    .filter((r) => r.id !== ALL && r.products.some((x) => x.id === p.id || (p.core && x.core && x.step === p.step)))
+    .map((r) => r.tab);
 }
 
 export default function Cherry() {
   const { data } = useSiteData();
-  const { reviews } = data;
   const routines = withAllTab(data.routines);
   const [active, setActive] = useState(ALL);
   const routine = routines.find((r) => r.id === active) ?? routines[0];
-  const shown = reviews.filter((r) => r.visible && r.consent);
-  // Bumped when the first-visit intro lifts, so the hero animation plays as it's revealed.
+  const shown = data.reviews.filter((r) => r.visible && r.consent);
+  // bumped when the first-visit opening lifts, so the hero's own entrance plays as it's revealed
   const [run, setRun] = useState(0);
   const reveal = useCallback(() => setRun((n) => n + 1), []);
 
   return (
-    <MotionConfig reducedMotion="user" transition={{ duration: 0.9, ease: EASE }}>
-      <Intro onReveal={reveal} />
-      <div key={run} className="grain min-h-dvh overflow-x-clip">
+    <MotionConfig reducedMotion="user" transition={{ duration: 0.8, ease: EASE }}>
+      <Opening products={routines[0]?.products ?? []} onReveal={reveal} />
+      <div key={run} className="min-h-dvh overflow-x-clip bg-milk text-ink">
         <DraftBanner />
         <Header />
-        {routine && <Hero routine={routine} routines={routines} open={(id) => { setActive(id); document.getElementById("rutin")?.scrollIntoView(); }} />}
-        <Ribbon />
-        {routine && <Routines routines={routines} routine={routine} setActive={setActive} />}
+        <Intro picks={routines[0]?.products.filter((p) => p.core).slice(0, 3) ?? []} />
+        {routine && <Shop routines={routines} routine={routine} setActive={setActive} />}
         <FromThreads />
         {shown.length > 0 && <Reviews reviews={shown} routines={routines} />}
         <Faq />
         <About />
         <Footer />
-        <FloatingNav />
       </div>
     </MotionConfig>
   );
 }
 
-/* ---------- small pieces ---------- */
+/* ---------- first-visit opening ---------- */
 
-/* ---------- first-visit intro ---------- */
-
-const INTRO_KEY = "cherry-intro-seen";
-const IN_OUT = [0.76, 0, 0.24, 1] as const; // hard ease-in-out, the AE "wipe" curve
+const OPENING_KEY = "cherry-intro-seen";
+const IN_OUT = [0.76, 0, 0.24, 1] as const; // hard ease-in-out for the wipe
+// each card's time on screen: the deck shuffles faster and faster, like flicking through her shelf
+const BEATS = [420, 300, 230, 180, 150, 130, 120, 110];
 
 /**
- * Plays once per browser: cherry draws on, name types up, counter runs to 100,
- * then a red and a milk panel wipe upward to reveal the page.
- * Renders on the server too (covering the page) so first-timers never see a flash;
+ * Plays once per browser. Her products flick past as a deck of colour cards, each named,
+ * speeding up; the deck drops away, her name rises, then a white and a blush panel wipe up
+ * to reveal the page. Rendered on the server too, so a first visit never flashes the page;
  * returning visitors have it removed on the first client tick.
  */
-function Intro({ onReveal }: { onReveal: () => void }) {
+function Opening({ products, onReveal }: { products: Product[]; onReveal: () => void }) {
   const [show, setShow] = useState(true);
   const [first, setFirst] = useState(false);
+  const [card, setCard] = useState(0);
+  const [named, setNamed] = useState(false);
   const count = useRef<HTMLSpanElement>(null);
   const reduce = useReducedMotion();
   const started = useRef(false);
   const done = useRef(false);
+  const deck = products.slice(0, BEATS.length);
+
   const finish = useCallback(() => {
-    if (done.current) return; // skip and the timer both land here; reveal only once
+    if (done.current) return; // skip and the timeline both land here
     done.current = true;
     setShow(false);
     onReveal();
   }, [onReveal]);
 
   useEffect(() => {
-    if (started.current) return; // run once, even if props/reduced-motion settle later
+    if (started.current) return; // once, even under React dev's double effects
     started.current = true;
     let seen = false;
-    try { seen = localStorage.getItem(INTRO_KEY) === "1"; localStorage.setItem(INTRO_KEY, "1"); } catch {}
+    try { seen = localStorage.getItem(OPENING_KEY) === "1"; localStorage.setItem(OPENING_KEY, "1"); } catch {}
     if (seen) { setShow(false); return; }
     setFirst(true);
-    const ms = reduce ? 700 : 2600;
-    if (count.current) animate(0, 100, { duration: ms / 1000 - 0.3, ease: [0.65, 0, 0.35, 1],
+    // no cleanup on purpose: clearing these timers in dev's double effect would strand the opening
+    if (reduce || !deck.length) { setNamed(true); setTimeout(finish, 900); return; }
+    let t = 350;
+    deck.forEach((_, i) => { if (i) setTimeout(() => setCard(i), t); t += BEATS[i]; });
+    setTimeout(() => setNamed(true), t - 150); // her name starts rising as the last card leaves
+    setTimeout(finish, t + 1100);
+    const total = (t + 1100) / 1000;
+    animate(0, 100, { duration: total - 0.2, ease: [0.65, 0, 0.35, 1],
       onUpdate: (v) => count.current && (count.current.textContent = String(Math.round(v)).padStart(3, "0")) });
-    // No cleanup on purpose: React dev runs effects twice, and clearing here would strand the intro.
-    setTimeout(finish, ms);
-  }, [reduce, finish]);
+  }, [reduce, finish, deck]);
 
   useEffect(() => {
     document.documentElement.style.overflow = show ? "hidden" : "";
   }, [show]);
 
-  
-  const name = "cherrryyyii".split("");
-
   return (
     <AnimatePresence>
       {show && (
-        <motion.div key="red" aria-hidden className="fixed inset-0 z-[99] bg-cherry"
-          exit={first ? { y: "-100%", transition: { duration: 0.9, ease: IN_OUT, delay: 0.12 } } : { opacity: 0, transition: { duration: 0 } }} />
+        <motion.div key="blush" aria-hidden className="fixed inset-0 z-[99] bg-blush"
+          exit={first ? { y: "-100%", transition: { duration: 0.9, ease: IN_OUT, delay: 0.14 } } : { opacity: 0, transition: { duration: 0 } }} />
       )}
       {show && (
-        <motion.div key="milk" role="status" aria-label="Memuatkan" className="fixed inset-0 z-[100] flex flex-col bg-milk text-ink"
+        <motion.div key="white" role="status" aria-label="Loading" className="fixed inset-0 z-[100] flex flex-col overflow-hidden bg-milk text-ink"
           exit={first ? { y: "-100%", transition: { duration: 0.9, ease: IN_OUT } } : { opacity: 0, transition: { duration: 0.15 } }}>
-          <div className="wrap flex items-center justify-between py-5 text-xs font-semibold uppercase tracking-[0.18em] text-muted">
-            <span>Katalog Cherry</span>
-            {first && <button onClick={finish} className="rounded-full px-3 py-1.5 hover:bg-blush hover:text-cherry">Langkau ✕</button>}
+          <div className={`wrap flex items-center justify-between py-4 text-[13px] font-semibold uppercase tracking-[0.06em] ${first ? "" : "opacity-0"}`}>
+            <span className="text-muted">Everything I actually use</span>
+            {first && <button onClick={finish} className="min-h-11 rounded-md px-3 hover:bg-blush">Skip</button>}
           </div>
 
-          <div className={`flex flex-1 flex-col items-center justify-center gap-6 transition-opacity duration-300 ${first ? "opacity-100" : "opacity-0"}`}>
-            {first && <CherryMark className="h-24 w-24 sm:h-32 sm:w-32" />}
-            <p className="flex overflow-hidden pb-[0.15em] font-display text-[clamp(2.75rem,9vw,6rem)] leading-none tracking-[-0.02em]">
-              {first && name.map((ch, i) => (
-                <motion.span key={i} className="inline-block" initial={{ y: "110%", rotate: 8 }} animate={{ y: "0%", rotate: 0 }}
-                  transition={{ duration: 0.9, ease: EASE, delay: 0.7 + i * 0.045 }}>
-                  {ch}
-                </motion.span>
-              ))}
-            </p>
+          <div className={`relative flex flex-1 items-center justify-center ${first ? "" : "opacity-0"}`}>
+            {/* the deck: a stack of her products; the top card flicks away to show the next */}
             {first && (
-              <motion.p initial={{ opacity: 0, letterSpacing: "0.5em" }} animate={{ opacity: 1, letterSpacing: "0.18em" }}
-                transition={{ duration: 1.2, ease: EASE, delay: 1.2 }} className="text-xs font-semibold uppercase text-muted">
-                Skincare &amp; makeup yang saya pakai
-              </motion.p>
+              <motion.div initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.7, ease: EASE }}
+                className="relative aspect-[4/5] w-[min(56vw,15rem)]">
+                {deck.map((p, i) => {
+                  const gone = named || i < card;
+                  const depth = Math.min(i - card, 3);
+                  const tilt = i % 2 ? -1 : 1;
+                  return (
+                    <motion.div key={p.id} style={{ zIndex: deck.length - i }}
+                      animate={gone
+                        ? { y: "-115vh", rotate: tilt * 16, transition: { duration: 0.55, ease: [0.55, 0, 0.75, 0] } }
+                        : { y: depth * -10, rotate: depth ? tilt * (2 + depth * 2) : 0, scale: 1 - depth * 0.04 }}
+                      transition={{ duration: 0.45, ease: EASE }}
+                      className="absolute inset-x-0 top-0 rounded-lg bg-white p-2 shadow-[0_24px_60px_-24px_rgba(36,22,26,.35)]">
+                      <Photo tint={p.tint} alt="" label={p.brand ?? p.step} sizes="15rem" className="aspect-[4/5]" />
+                      <span className="block px-1 pt-2 text-[13px] font-semibold">{p.brand ? `${p.brand} ${p.step.toLowerCase()}` : p.step}</span>
+                    </motion.div>
+                  );
+                })}
+              </motion.div>
+            )}
+            {/* her name rises once the deck is through */}
+            {first && named && (
+              <p className="absolute flex overflow-hidden pb-[0.12em] text-[clamp(3.25rem,15vw,12rem)] font-bold leading-none tracking-[-0.04em]">
+                {"cherrryyyii".split("").map((ch, i) => (
+                  <motion.span key={i} className="inline-block" initial={{ y: "105%" }} animate={{ y: "0%" }}
+                    transition={{ duration: 0.8, ease: EASE, delay: i * 0.035 }}>
+                    {ch}
+                  </motion.span>
+                ))}
+              </p>
             )}
           </div>
 
           <div className={`wrap pb-6 ${first ? "" : "opacity-0"}`}>
-            <div className="flex items-end justify-between">
-              <span className="text-xs text-muted">Okt 2026</span>
-              <span ref={count} className="font-display text-[clamp(3rem,10vw,7rem)] leading-none text-cherry">000</span>
+            <div className="flex items-end justify-between gap-4">
+              <span className="text-[13px] text-muted">Skincare &amp; makeup, each one tap from Shopee</span>
+              <span ref={count} className="text-[clamp(2.5rem,8vw,5rem)] font-bold leading-none tabular-nums tracking-[-0.04em]">000</span>
             </div>
-            <div className="mt-3 h-px overflow-hidden bg-ink/10">
+            <div className="mt-3 h-0.5 overflow-hidden rounded-full bg-ink/10">
               {first && <motion.div className="h-full origin-left bg-cherry" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }}
-                transition={{ duration: reduce ? 0.4 : 2.3, ease: [0.65, 0, 0.35, 1] }} />}
+                transition={{ duration: reduce ? 0.6 : 3, ease: [0.65, 0, 0.35, 1] }} />}
             </div>
           </div>
         </motion.div>
       )}
     </AnimatePresence>
+  );
+}
+
+/* ---------- small pieces ---------- */
+
+function Arrow({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden className={`h-4 w-4 shrink-0 ${className}`} fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2.5 8h11M9 3.5 13.5 8 9 12.5" />
+    </svg>
+  );
+}
+
+
+
+function Heading({ children, className = "" }: { children: string; className?: string }) {
+  return (
+    <h2 className={`text-[clamp(2rem,4.5vw,3.5rem)] font-bold leading-[1.02] tracking-[-0.035em] [text-wrap:balance] ${className}`}>
+      {children}
+    </h2>
+  );
+}
+
+/** Photo slot: her photo when there is one, otherwise the product's name set large on its colour, like a label. */
+const isDark = (hex: string) => {
+  const n = parseInt(hex.slice(1, 7), 16);
+  return ((n >> 16) & 255) * 0.299 + ((n >> 8) & 255) * 0.587 + (n & 255) * 0.114 < 140;
+};
+
+function Photo({ src, tint, alt, label, className = "", sizes }: { src?: string; tint: string; alt: string; label?: string; className?: string; sizes: string }) {
+  const [broken, setBroken] = useState(false);
+  return (
+    <div className={`@container relative overflow-hidden rounded-lg ${className}`}
+      style={{ background: `radial-gradient(120% 90% at 30% 15%, rgba(255,255,255,.35), transparent 60%), ${tint}` }}>
+      {src && !broken ? (
+        <Image src={src} alt={alt} fill sizes={sizes} onError={() => setBroken(true)}
+          className="object-cover transition-transform duration-[1.2s] ease-out-expo group-hover:scale-[1.04]" />
+      ) : label ? (
+        <span aria-hidden className="absolute inset-x-4 bottom-3 text-[clamp(1.25rem,15cqw,3rem)] font-bold lowercase leading-[0.95] tracking-[-0.04em] transition-transform duration-700 ease-out-expo group-hover:-translate-y-1 sm:inset-x-5 sm:bottom-4"
+          style={{ color: `color-mix(in oklab, ${tint} 45%, ${isDark(tint) ? "#FFFFFF" : "#24161A"})` }}>
+          {label}
+        </span>
+      ) : null}
+    </div>
   );
 }
 
@@ -169,18 +226,11 @@ function DraftBanner() {
   return (
     <AnimatePresence initial={false}>
       {open && (
-        <motion.div
-          exit={{ height: 0, opacity: 0 }}
-          transition={{ duration: 0.5, ease: EASE }}
-          className="overflow-hidden bg-stem text-milk"
-        >
-          <div className="wrap flex items-start gap-3 py-2.5 text-[13px] leading-snug sm:items-center">
-            <p className="flex-1">
-              <b className="font-semibold">Mockup untuk @cherrryyyii.</b> Link Shopee ni link sebenar dari Threads awak. Nama
-              produk, gambar &amp; ayat masih draf.
-            </p>
-            <button onClick={() => setOpen(false)} className="shrink-0 rounded-full px-2 py-0.5 text-milk/80 hover:bg-white/10" aria-label="Tutup nota draf">
-              ✕
+        <motion.div exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.4, ease: EASE }} className="overflow-hidden bg-blush">
+          <div className="wrap flex items-center gap-3 py-2 text-[13px] leading-snug text-ink/80">
+            <p className="flex-1"><b className="font-semibold text-ink">Draft for @cherrryyyii.</b> Links are real; photos and product names are waiting for you.</p>
+            <button onClick={() => setOpen(false)} aria-label="Close draft note" className="grid h-9 w-9 shrink-0 place-items-center rounded-full hover:bg-white/70">
+              <svg viewBox="0 0 16 16" aria-hidden className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9" /></svg>
             </button>
           </div>
         </motion.div>
@@ -189,486 +239,199 @@ function DraftBanner() {
   );
 }
 
-function CherryMark({ className = "" }: { className?: string }) {
-  // Stems draw on, then the two cherries pop — a classic AE trim-path + scale reveal.
-  return (
-    <svg viewBox="0 0 40 40" className={className} aria-hidden>
-      <motion.path
-        d="M14 27 C 15 18, 19 10, 27 5 M26 26 C 25 18, 25 11, 27 5 M27 5 C 30 6, 33 9, 33 12 C 30 12, 28 9, 27 5"
-        fill="none" stroke="var(--color-stem)" strokeWidth="2" strokeLinecap="round"
-        initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.2, ease: EASE, delay: 0.2 }}
-      />
-      {[[13, 30], [26, 30]].map(([cx, cy], i) => (
-        <motion.circle key={i} cx={cx} cy={cy} r="7" fill="var(--color-cherry)"
-          initial={{ scale: 0 }} animate={{ scale: 1 }} style={{ transformOrigin: `${cx}px ${cy}px` }}
-          transition={{ type: "spring", stiffness: 500, damping: 14, delay: 0.9 + i * 0.12 }}
-        />
-      ))}
-    </svg>
-  );
-}
-
+/** Sticky header: picks up a hairline and a frosted ground once the page scrolls under it. */
 function Header() {
+  const { scrollY } = useScroll();
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => scrollY.on("change", (y) => setScrolled(y > 8)), [scrollY]);
   return (
-    <header className="wrap flex items-center justify-between py-4">
-      <a href="#" className="flex items-center gap-2 font-display text-2xl tracking-tight">
-        <CherryMark className="h-9 w-9" />
-        cherrryyyii
-      </a>
-      <nav className="flex items-center gap-2 text-sm font-medium sm:gap-5">
-        <a href="#rutin" className="hidden hover:text-cherry sm:inline">Produk</a>
-        <a href="#about" className="hidden hover:text-cherry sm:inline">Tentang</a>
-        <a href={THREADS} target="_blank" rel="noopener" className="rounded-full border border-ink/15 px-3.5 py-1.5 hover:border-cherry hover:text-cherry">
-          Threads ↗
+    <header className={`sticky top-0 z-40 transition-[background-color,box-shadow] duration-300 ${scrolled ? "bg-milk/85 shadow-[0_1px_0_rgba(36,22,26,.08)] backdrop-blur-md" : "bg-milk"}`}>
+      <div className="wrap flex h-14 items-center justify-between">
+        <a href="#" className="text-lg font-bold tracking-[-0.02em]">
+          cherrryyyii
         </a>
-        {/* ponytail: open link for the mockup; hide behind login before going live */}
-        <Link href="/admin" className="rounded-full bg-ink px-3.5 py-1.5 text-milk hover:bg-cherry">Admin</Link>
-      </nav>
+        <nav className="flex items-center gap-1 text-[13px] font-semibold uppercase tracking-[0.06em]">
+          <a href="#shop" className="hidden rounded-full px-3 py-2 hover:bg-blush sm:block">Shop</a>
+          <a href="#about" className="hidden rounded-full px-3 py-2 hover:bg-blush sm:block">About</a>
+          <a href={THREADS} target="_blank" rel="noopener" className="inline-flex min-h-11 items-center gap-1 rounded-full px-3 hover:bg-blush">
+            Threads <Arrow className="h-3.5 w-3.5 -rotate-45" />
+          </a>
+        </nav>
+      </div>
     </header>
   );
 }
 
-/* ---------- hero ---------- */
-
-function Hero({ routine, routines, open }: { routine: Routine; routines: Routine[]; open: (id: string) => void }) {
-  const ref = useRef<HTMLElement>(null);
-  const reduce = useReducedMotion();
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
-  const shelfY = useTransform(scrollYProgress, [0, 1], [0, reduce ? 0 : -90]);
-  const textY = useTransform(scrollYProgress, [0, 1], [0, reduce ? 0 : 60]);
-  const all = routines.find((r) => r.id === ALL);
-  const sections = routines.filter((r) => r.id !== ALL);
-
+function Intro({ picks }: { picks: Product[] }) {
   return (
-    <section ref={ref} className="wrap relative grid gap-10 pb-16 pt-6 md:min-h-[calc(100dvh-7rem)] md:grid-cols-[1.1fr_1fr] md:items-center md:gap-16 md:pt-8">
-      <HazeBlobs />
-      <motion.div style={{ y: textY }} className="relative">
-        <motion.p initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}
-          className="mb-6 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-cherry">
-          <span>Katalog Cherry</span>
-          <span className="text-cherry/50">·</span>
-          <span className="text-muted">Edisi Okt 2026</span>
-        </motion.p>
-        <h1 className="font-display text-[clamp(3rem,6vw,8.5rem)] leading-[0.92] tracking-[-0.03em]">
-          <MaskLines delay={0.25} lines={["Skincare &", "makeup yang", <span key="c" className="text-cherry">saya pakai.</span>]} />
-        </h1>
-        <motion.p initial={{ opacity: 0, y: 14, filter: "blur(8px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} transition={{ delay: 0.75 }}
-          className="mt-6 max-w-md text-[17px] leading-relaxed text-muted xl:max-w-lg xl:text-xl">
-          Semua produk dari post Threads saya, dikumpul dalam satu tempat. Setiap satu ada link Shopee.
-        </motion.p>
-
-        {/* catalogue contents: one line per section, like the index page of a magazine */}
-        <motion.ol initial="hidden" animate="show" transition={{ staggerChildren: 0.07, delayChildren: 0.95 }}
-          className="mt-8 max-w-lg border-t border-ink/15">
-          {sections.map((r, i) => (
-            <motion.li key={r.id} variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }} transition={{ duration: 0.7, ease: EASE }}>
-              <button onClick={() => open(r.id)}
-                className="group flex w-full items-baseline gap-4 border-b border-ink/15 py-3 text-left transition-colors hover:text-cherry">
-                <span className="w-6 font-display text-sm text-muted group-hover:text-cherry">{String(i + 1).padStart(2, "0")}</span>
-                <span className="flex-1 font-semibold">{r.tab}</span>
-                <span className="text-sm text-muted">{r.products.length} produk</span>
-                <span className="transition-transform duration-500 ease-out-expo group-hover:translate-x-1">→</span>
-              </button>
-            </motion.li>
-          ))}
-        </motion.ol>
-
-        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.2 }} className="mt-8">
-          <button onClick={() => open(ALL)} className="group inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3.5 font-semibold text-milk transition-colors hover:bg-cherry">
-            Buka katalog{all ? ` · ${all.products.length} produk` : ""}
-            <span className="transition-transform duration-500 ease-out-expo group-hover:translate-y-1">↓</span>
-          </button>
+    <section className="relative overflow-hidden bg-blush">
+      <div className="wrap relative z-10 flex items-start justify-between gap-10 pb-[clamp(4rem,15vw,15rem)] pt-3 md:pt-12">
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, ease: EASE }}
+          className="max-w-xl rounded-lg bg-white p-4 shadow-[0_12px_40px_-16px_rgba(36,22,26,.18)] md:p-8">
+          <div className="mb-3 md:mb-5">
+            <span className="leading-tight">
+              <b className="block font-semibold">@cherrryyyii</b>
+              <span className="text-[13px] text-muted">Skincare &amp; makeup</span>
+            </span>
+          </div>
+          <h1 className="text-[clamp(2.25rem,4.6vw,4rem)] font-bold leading-[0.98] tracking-[-0.04em]">
+            <MaskLines delay={0.15} lines={["Everything I", "actually use."]} />
+          </h1>
+          <p className="mt-3 text-[17px] leading-relaxed text-muted md:mt-4 md:text-lg">
+            My moisturiser, toner mist, lip tint and more, each one tap from Shopee.
+          </p>
         </motion.div>
-      </motion.div>
-      <motion.div style={{ y: shelfY }} className="relative">
-        <Shelf routine={routine} />
-      </motion.div>
+        {/* her most-used products, fanned like they're on the shelf (desktop only) */}
+        {picks.length > 0 && <div className="relative mr-[2vw] mt-6 hidden h-80 w-[34rem] shrink-0 xl:block">
+          {picks.map((p, i) => (
+            <motion.a key={p.id} href={p.link} target="_blank" rel="sponsored noopener" aria-label={`Buy ${p.brand ?? p.step} on Shopee (new tab, affiliate link)`}
+              initial={{ opacity: 0, y: 40, rotate: 0 }} animate={{ opacity: 1, y: 0, rotate: (i - 1) * 7 }}
+              whileHover={{ y: -12, rotate: 0, zIndex: 10 }}
+              transition={{ duration: 1, ease: EASE, delay: 0.35 + i * 0.1 }}
+              style={{ left: `${i * 11}rem`, top: i === 1 ? 0 : "1.5rem", zIndex: i === 1 ? 2 : 1 }}
+              className="group absolute w-48 rounded-lg bg-white p-2 shadow-[0_18px_40px_-18px_rgba(36,22,26,.35)]">
+              <Photo src={p.photo} tint={p.tint} alt={p.brand ?? p.step} label={p.brand ?? p.step} sizes="12rem" className="aspect-[4/5]" />
+              <span className="flex items-center justify-between px-1 pb-0.5 pt-2 text-[13px] font-semibold">
+                {p.brand ? `${p.brand} ${p.step.toLowerCase()}` : p.step}
+                <Arrow className="h-3.5 w-3.5 -rotate-45 text-cherry" />
+              </span>
+            </motion.a>
+          ))}
+        </div>}
+      </div>
+      {/* the wordmark, set huge and cropped by the band's bottom edge */}
+      <motion.p aria-hidden initial={{ y: "30%" }} animate={{ y: "-4%" }} transition={{ duration: 1.4, ease: EASE, delay: 0.1 }}
+        className="pointer-events-none absolute inset-x-0 bottom-0 select-none whitespace-nowrap text-center text-[clamp(4.5rem,18.5vw,26rem)] font-bold leading-[0.8] tracking-[-0.04em] text-white">
+        cherrryyyii
+      </motion.p>
     </section>
   );
 }
 
-function HazeBlobs() {
+/* ---------- shop ---------- */
+
+function Shop({ routines, routine, setActive }: { routines: Routine[]; routine: Routine; setActive: (id: string) => void }) {
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-      <motion.div className="absolute -left-24 top-10 h-80 w-80 rounded-full bg-blush blur-3xl"
-        animate={{ x: [0, 60, 0], y: [0, 30, 0] }} transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }} />
-      <motion.div className="absolute right-0 top-40 h-96 w-96 rounded-full bg-haze blur-3xl"
-        animate={{ x: [0, -50, 0], y: [0, -40, 0] }} transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }} />
-    </div>
-  );
-}
-
-function Shelf({ routine }: { routine: Routine }) {
-  return (
-    <motion.figure
-      initial={{ clipPath: "inset(12% 12% 12% 12% round 2rem)", opacity: 0 }}
-      animate={{ clipPath: "inset(0% 0% 0% 0% round 2rem)", opacity: 1 }}
-      transition={{ duration: 1.4, ease: EASE, delay: 0.3 }}
-      className="relative aspect-[4/5] w-full overflow-hidden rounded-[2rem] bg-blush sm:aspect-[5/4] md:aspect-[4/5] xl:aspect-[5/4]">
-      {/* slow push-in, like a camera drifting toward the shelf */}
-      <motion.div className="absolute inset-0" initial={{ scale: 1.25 }} animate={{ scale: 1.05 }} transition={{ duration: 6, ease: EASE, delay: 0.3 }}>
-        <Image src="/shelf.jpg" alt="Produk skincare dan makeup atas latar pink" fill priority sizes="(min-width: 768px) 50vw, 100vw" className="object-cover" />
-      </motion.div>
-      <div className="absolute inset-0 bg-gradient-to-t from-ink/55 via-transparent to-ink/10" />
-
-      <figcaption className="absolute inset-x-0 top-0 flex items-start justify-between p-5 text-milk sm:p-6">
-        <span className="rounded-full bg-milk/85 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink backdrop-blur">Rak Cherry</span>
-        <AnimatePresence mode="wait">
-          <motion.span key={routine.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.4 }}
-            className="rounded-full bg-cherry px-3 py-1 font-display text-sm">
-            {routine.tab}
-          </motion.span>
-        </AnimatePresence>
-      </figcaption>
-
-      <div className="absolute inset-x-0 bottom-0 flex items-end justify-between p-5 text-milk sm:p-6">
-        <AnimatePresence mode="wait">
-          <motion.div key={routine.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.5, ease: EASE }}>
-            <p className="font-display text-5xl leading-none">{routine.products.length}</p>
-            <p className="mt-1 text-sm text-milk/85">produk · {routine.when}</p>
-          </motion.div>
-        </AnimatePresence>
-        {/* ponytail: stock mockup photo; swap for Cherry's own shelf photo */}
-        <a href="https://unsplash.com/photos/pink-cosmetic-containers-and-makeup-brush-dMjkQJs58uo" target="_blank" rel="noopener"
-          className="text-[10px] text-milk/70 hover:text-milk">Foto contoh: pmv chamara / Unsplash</a>
-      </div>
-    </motion.figure>
-  );
-}
-
-/** Illustrated packaging — placeholder until Cherry's own product photos are shot. */
-function Bottle({ pack, tint, label }: { pack: Pack; tint: string; label: string }) {
-  const body = "var(--color-ink)";
-  const shapes: Record<Pack, React.ReactNode> = {
-    tube: <><rect x="14" y="18" width="32" height="88" rx="6" fill={tint} /><rect x="20" y="6" width="20" height="14" rx="3" fill={body} /></>,
-    pump: <><rect x="10" y="40" width="40" height="66" rx="10" fill={tint} /><rect x="24" y="24" width="12" height="18" fill={body} /><rect x="24" y="16" width="26" height="8" rx="3" fill={body} /></>,
-    mist: <><rect x="13" y="34" width="34" height="72" rx="12" fill={tint} /><rect x="22" y="18" width="16" height="18" rx="3" fill={body} /><rect x="26" y="10" width="8" height="10" rx="2" fill={body} /></>,
-    dropper: <><rect x="12" y="50" width="36" height="56" rx="8" fill={tint} /><rect x="20" y="36" width="20" height="16" rx="3" fill={body} /><ellipse cx="30" cy="26" rx="8" ry="12" fill={body} /></>,
-    jar: <><rect x="6" y="66" width="48" height="40" rx="10" fill={tint} /><rect x="4" y="54" width="52" height="14" rx="5" fill={body} /></>,
-    stick: <><rect x="17" y="46" width="26" height="60" rx="5" fill={tint} /><rect x="17" y="24" width="26" height="24" rx="5" fill={body} /></>,
-    compact: <><rect x="6" y="84" width="48" height="22" rx="11" fill={tint} /><rect x="6" y="76" width="48" height="12" rx="6" fill={body} /></>,
-  };
-  return (
-    <svg viewBox="0 0 60 112" className="w-full drop-shadow-[0_10px_10px_rgba(36,22,26,.15)]" role="img" aria-label={label}>
-      <g stroke="rgba(36,22,26,.12)" strokeWidth="1">{shapes[pack]}</g>
-      <rect x="18" y="80" width="24" height="10" rx="2" fill="rgba(255,255,255,.75)" />
-    </svg>
-  );
-}
-
-/* ---------- ribbon ---------- */
-
-function Ribbon() {
-  const words = ["Cleanser", "Toner mist", "Serum", "Moisturiser", "Sunscreen", "Skin tint", "Blusher", "Lip tint"];
-  // Two identical halves slide -50% forever, so the seam never shows.
-  return (
-    <div aria-hidden className="relative -rotate-2 overflow-hidden bg-cherry py-4 text-milk">
-      <div className="ribbon flex w-max whitespace-nowrap font-display text-3xl sm:text-4xl">
-        {[0, 1].map((half) => (
-          <div key={half} className="flex">
-            {[...words, ...words].map((w, i) => (
-              <span key={i} className="flex items-center gap-8 pr-8">{w}<span className="text-xl text-milk/60">✿</span></span>
-            ))}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ---------- routines ---------- */
-
-const cardVariants: Variants = {
-  hidden: { clipPath: "inset(100% 0% 0% 0% round 1.5rem)", y: 40 },
-  show: (i: number) => ({
-    clipPath: "inset(0% 0% 0% 0% round 1.5rem)", y: 0,
-    transition: { duration: 1, ease: EASE, delay: 0.08 * i },
-  }),
-  exit: { opacity: 0, y: -16, filter: "blur(8px)", transition: { duration: 0.3 } },
-};
-
-function Routines({ routines, routine, setActive }: { routines: Routine[]; routine: Routine; setActive: (id: string) => void }) {
-  const active = routine.id;
-  // ≤4 tabs share the width evenly (nothing clipped on a phone); more than that scrolls.
-  const fit = routines.length <= 4;
-  return (
-    <section id="rutin" className="wrap scroll-mt-4 pb-20 pt-24">
-      <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-cherry">Produk</p>
-      <h2 className="max-w-3xl font-display text-[clamp(2.2rem,6vw,5.5rem)] leading-[0.98] tracking-[-0.02em]">
-        <RevealWords text="Produk yang saya guna setakat ni." />
-      </h2>
-
-      <SkinPicker routines={routines} pick={(id) => { setActive(id); document.getElementById("rutin-panel")?.scrollIntoView({ block: "start" }); }} />
-
-      {/* sticky tab bar: sits under the thumb while scrolling cards */}
-      <div className="sticky top-0 z-30 mx-[calc(var(--gutter)*-1)] mt-8 bg-milk/80 px-[var(--gutter)] py-3 backdrop-blur-md">
-        <div role="tablist" aria-label="Pilih rutin" className={fit ? "grid grid-flow-col auto-cols-fr gap-1.5 sm:flex sm:gap-2" : "no-scrollbar flex gap-2 overflow-x-auto"}>
+    <section id="shop" aria-label="Products" className="wrap scroll-mt-16 pb-24 pt-2 md:pt-6">
+      <div className="sticky top-14 z-30 -mx-[var(--gutter)] bg-milk/90 px-[var(--gutter)] backdrop-blur-md">
+        <div role="tablist" aria-label="Show" className="no-scrollbar flex gap-6 overflow-x-auto border-b border-ink/10">
           {routines.map((r) => {
-            const on = r.id === active;
+            const on = r.id === routine.id;
             return (
-              <button key={r.id} role="tab" id={`tab-${r.id}`} aria-selected={on} aria-controls="rutin-panel" onClick={() => setActive(r.id)}
-                className={`relative min-h-11 shrink-0 rounded-full px-3 py-2 text-[13px] font-semibold leading-tight transition-colors sm:px-4 sm:text-sm ${on ? "text-milk" : "bg-ink/[0.04] text-ink hover:text-cherry"}`}>
-                {on && <motion.span layoutId="tab-pill" className="absolute inset-0 rounded-full bg-cherry" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
-                <span className="relative">{r.tab}</span>
+              <button key={r.id} role="tab" id={`tab-${r.id}`} aria-selected={on} aria-controls="shop-panel" onClick={() => setActive(r.id)}
+                className={`relative min-h-11 shrink-0 whitespace-nowrap text-[15px] font-semibold transition-colors ${on ? "text-ink" : "text-muted hover:text-ink"}`}>
+                {r.tab}
+                {on && <motion.span layoutId="tab-line" className="absolute inset-x-0 -bottom-px h-0.5 bg-cherry" transition={{ type: "spring", stiffness: 500, damping: 40 }} />}
               </button>
             );
           })}
         </div>
-        <p className="mt-2 text-xs text-muted">{DISCLOSURE}</p>
       </div>
+      <p className="mt-2 text-[13px] text-muted"><span className="sm:hidden">Affiliate links: I earn a little, you pay the same.</span><span className="hidden sm:inline">{DISCLOSURE}</span></p>
 
-      <div id="rutin-panel" role="tabpanel" aria-labelledby={`tab-${active}`} className="mt-8 scroll-mt-32">
-        <AnimatePresence mode="wait">
-          <motion.div key={routine.id} initial="hidden" animate="show" exit="exit">
-            <div className="mb-8 grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
-              <div>
-                <motion.h3 variants={{ hidden: { opacity: 0, x: -20 }, show: { opacity: 1, x: 0 }, exit: { opacity: 0 } }} className="font-display text-3xl">
-                  {routine.title}
-                </motion.h3>
-                <motion.blockquote variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0, transition: { delay: 0.1 } }, exit: { opacity: 0 } }}
-                  className="mt-2 max-w-xl text-lg text-muted">
-                  {routine.post ? `“${routine.intro}”` : routine.intro}{" "}
-                  {routine.post && <a href={routine.post} target="_blank" rel="noopener" className="whitespace-nowrap text-sm font-semibold text-cherry underline-offset-4 hover:underline">post asal ↗</a>}
-                </motion.blockquote>
-              </div>
-              <motion.span variants={{ hidden: { opacity: 0, scale: 0.8 }, show: { opacity: 1, scale: 1 }, exit: { opacity: 0 } }}
-                className="justify-self-start rounded-full border border-ink/15 px-4 py-1.5 text-sm font-semibold md:justify-self-end">
-                {routine.when}
-              </motion.span>
-            </div>
-
-            {routine.id === ALL && <StartHere products={routine.products.filter((p) => p.core)} />}
-
-            <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
-              {routine.products.map((p, i) => (
-                <StepCard key={p.id} p={p} i={i} label={routine.id === ALL ? p.step : `Langkah ${i + 1} · ${p.step}`} />
-              ))}
-            </ol>
-
-            {routine.tip && <motion.aside variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { delay: 0.5, duration: 0.8, ease: EASE } }, exit: { opacity: 0 } }}
-              className="mt-6 flex items-start gap-3 rounded-3xl bg-stem p-5 text-milk sm:p-6">
-              <span className="font-display text-2xl leading-none">✿</span>
-              <p className="text-[15px] leading-relaxed"><b className="font-semibold">Tip Cherry</b> <span className="text-milk/60">(draf)</span>: {routine.tip}</p>
-            </motion.aside>}
-          </motion.div>
+      <div id="shop-panel" role="tabpanel" aria-labelledby={`tab-${routine.id}`} className="mt-4 md:mt-6">
+        <AnimatePresence mode="wait" initial={false}>
+          {routine.intro ? (
+            <motion.div key={routine.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.35 }}
+              className="mb-8 max-w-xl">
+              <ThreadsPost text={routine.intro} url={routine.post} post={posts.find((x) => x.url === routine.post)} />
+            </motion.div>
+          ) : null}
         </AnimatePresence>
+
+        <motion.ul layout className="grid grid-cols-2 gap-x-3 gap-y-8 sm:gap-x-4 lg:grid-cols-4 lg:gap-y-12">
+          <AnimatePresence mode="popLayout" initial={false}>
+            {routine.products.map((p, i) => (
+              <Tile key={p.id} p={p} i={i} sets={setsFor(p, routines)} />
+            ))}
+          </AnimatePresence>
+        </motion.ul>
+        {routine.products.length === 0 && <p className="py-16 text-center text-muted">No products here yet. Check back after my next post.</p>}
+
+        {routine.tip && (
+          <motion.aside key={routine.id + "-tip"} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="mt-12 max-w-xl rounded-2xl bg-blush p-6">
+            <p className="text-sm font-semibold">My tip <span className="font-normal text-muted">· draft</span></p>
+            <p lang="ms" className="mt-1 text-lg leading-snug">{routine.tip}</p>
+          </motion.aside>
+        )}
       </div>
     </section>
   );
 }
 
-/** Two taps: describe your skin, land on the matching routine. */
-function SkinPicker({ routines, pick }: { routines: Routine[]; pick: (id: string) => void }) {
-  const options = SKIN_QUIZ.filter((o) => routines.some((r) => r.id === o.routine));
-  if (!options.length) return null;
+function Tile({ p, i, sets }: { p: Product; i: number; sets: string[] }) {
+  const title = p.name ? `${p.brand ? p.brand + " " : ""}${p.name}` : p.brand ? `${p.brand} ${p.step.toLowerCase()}` : p.step;
+  const detail = p.name || p.brand ? p.step : sets.join(" · ");
+  const label = `Buy ${p.step}${p.shade ? ` ${p.shade}` : ""} on Shopee (new tab, affiliate link)`;
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8, ease: EASE }}
-      className="mt-8 rounded-3xl bg-blush p-5 sm:p-6">
-      <p className="font-display text-2xl">Tak pasti nak mula mana?</p>
-      <p className="mt-1 text-sm text-muted">Kulit awak macam mana? Tekan satu, saya tunjuk rutin yang sesuai.</p>
-      <div className="mt-4 grid gap-2 sm:grid-cols-3">
-        {options.map((o) => (
-          <button key={o.label} onClick={() => pick(o.routine)}
-            className="group flex items-center justify-between gap-3 rounded-2xl bg-milk px-4 py-3.5 text-left transition-colors hover:bg-cherry hover:text-milk">
-            <span>
-              <span className="block font-semibold">{o.label}</span>
-              <span className="block text-xs text-muted group-hover:text-milk/80">{o.hint}</span>
-            </span>
-            <span className="transition-transform duration-500 ease-out-expo group-hover:translate-x-1">→</span>
-          </button>
-        ))}
-      </div>
-    </motion.div>
-  );
-}
-
-/** Her core trio — the "3 steps je" products she uses on every skin type. */
-function StartHere({ products }: { products: Product[] }) {
-  if (products.length < 2) return null;
-  return (
-    <motion.div variants={{ hidden: { opacity: 0, y: 24 }, show: { opacity: 1, y: 0, transition: { duration: 0.9, ease: EASE } }, exit: { opacity: 0 } }}
-      className="mb-6 overflow-hidden rounded-3xl bg-ink p-5 text-milk sm:p-8">
-      <div className="grid gap-6 lg:grid-cols-[1fr_2fr] lg:items-center">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blush/70">Mula sini</p>
-          <p className="mt-2 font-display text-3xl leading-tight sm:text-4xl">“Skincare {products.length} steps je.”</p>
-          <p className="mt-3 text-sm leading-relaxed text-milk/70">Ni yang saya pakai hari-hari, untuk kulit kering dan berminyak. Kalau baru nak mula, mula dengan ni.</p>
-        </div>
-        <ol className="grid gap-3 sm:grid-cols-3">
-          {products.map((p, i) => (
-            <li key={p.id} className="flex flex-col rounded-2xl bg-milk/[0.06] p-4">
-              <span className="font-display text-3xl text-blush">{String(i + 1).padStart(2, "0")}</span>
-              <span className="mt-2 font-semibold">{p.brand ? `${p.brand} · ` : ""}{p.step}</span>
-              {p.note && <span className="mt-1 text-sm italic text-milk/70">“{p.note}”</span>}
-              <a href={p.link} target="_blank" rel="sponsored noopener" aria-label={`Beli ${p.step} di Shopee (tab baru, link afiliasi)`}
-                className="mt-auto inline-flex items-center gap-1 pt-4 text-sm font-semibold text-blush hover:text-milk">
-                Beli di Shopee <span aria-hidden>→</span>
-              </a>
-            </li>
-          ))}
-        </ol>
-      </div>
-    </motion.div>
-  );
-}
-
-function StepCard({ p, i, label }: { p: Product; i: number; label: string }) {
-  return (
-    <motion.li custom={i} variants={cardVariants}
-      className="group relative flex flex-col overflow-hidden rounded-3xl border border-ink/10 bg-white/70 p-5 shadow-[0_1px_0_rgba(36,22,26,.04)] transition-shadow duration-500 hover:shadow-[0_24px_48px_-24px_rgba(184,29,56,.35)]">
-      <div className="flex items-start justify-between">
-        <span className="font-display text-5xl leading-none text-cherry/90">{String(i + 1).padStart(2, "0")}</span>
-        <div className="flex flex-wrap justify-end gap-1.5">
-          {p.core && <span className="rounded-full bg-stem/10 px-2.5 py-1 text-[11px] font-semibold text-stem">Kering &amp; berminyak</span>}
-          {p.shade && <span className="rounded-full bg-blush px-2.5 py-1 text-[11px] font-semibold text-cherry">{p.shade}</span>}
-        </div>
-      </div>
-
-      <div className="relative my-4 grid aspect-[4/3] place-items-center overflow-hidden rounded-2xl bg-gradient-to-br from-haze/60 to-blush">
-        <motion.div className="w-1/4" whileHover={{ rotate: -6, y: -6 }} transition={{ type: "spring", stiffness: 300, damping: 12 }}>
-          <Bottle pack={p.pack} tint={p.tint} label={p.step} />
-        </motion.div>
-        <span className="absolute bottom-2 right-3 text-[10px] uppercase tracking-[0.14em] text-muted/70">foto produk nanti</span>
-      </div>
-
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">{label}</p>
-      <h4 className="mt-1 font-display text-2xl leading-tight">
-        {p.brand ?? <span className="text-muted/60">Jenama</span>}{" "}
-        <span className="text-muted/60">{p.name ?? "· nama produk"}</span>
-      </h4>
-      {p.note && <p className="mt-3 border-l-2 border-stem/40 pl-3 text-[15px] italic leading-snug text-stem">“{p.note}”</p>}
-
-      <a href={p.link} target="_blank" rel="sponsored noopener" aria-label={`Beli ${p.step} di Shopee (tab baru, link afiliasi)`}
-        className="group/btn relative mt-auto flex min-h-12 translate-y-5 items-center justify-between overflow-hidden rounded-full bg-cherry px-5 font-semibold text-milk">
-        {/* fill wipe on hover — a horizontal track-matte */}
-        <span className="absolute inset-0 origin-left scale-x-0 bg-ink transition-transform duration-500 ease-out-expo group-hover/btn:scale-x-100" />
-        <span className="relative">Beli di Shopee</span>
-        <span className="relative transition-transform duration-500 ease-out-expo group-hover/btn:translate-x-1">→</span>
+    <motion.li layout initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-5% 0px" }}
+      exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.2 } }}
+      transition={{ duration: 0.8, ease: EASE, delay: (i % 4) * 0.06 }}
+      className="group flex flex-col">
+      <a href={p.link || undefined} target="_blank" rel="sponsored noopener" tabIndex={-1} aria-hidden className="relative block">
+        <Photo src={p.photo} tint={p.tint} alt={title} label={p.brand ?? p.step} sizes="(min-width: 1024px) 25vw, 50vw" className="aspect-square" />
+        <span className="absolute left-2.5 top-2.5 flex flex-wrap gap-1.5 sm:left-3 sm:top-3">
+          {p.core && <span className="rounded bg-white px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.06em]">Most used</span>}
+          {p.shade && <span className="rounded bg-white px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.06em]">{p.shade}</span>}
+        </span>
       </a>
-      <span className="mt-7 text-center text-[11px] text-muted">link afiliasi</span>
+      <div className="mt-3 flex flex-1 flex-col">
+        <h3 className="line-clamp-2 text-base font-semibold leading-snug tracking-[-0.01em] sm:text-lg">{title}</h3>
+        {detail && <p className="mt-0.5 text-[13px] text-muted">{detail}</p>}
+        {p.note && <p lang="ms" className="mt-2 text-[15px] leading-snug text-ink/80">“{p.note}”</p>}
+        <div className="mt-auto pt-3">
+          {!p.link ? (
+            <span className="flex min-h-11 items-center justify-center rounded-md text-sm font-semibold text-muted ring-1 ring-inset ring-ink/15">Link coming</span>
+          ) : (
+            <a href={p.link} target="_blank" rel="sponsored noopener" aria-label={label}
+              className="group/btn flex min-h-11 items-center justify-center gap-2 rounded-md text-[15px] font-semibold text-cherry ring-1 ring-inset ring-cherry transition-colors duration-300 hover:bg-cherry hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cherry">
+              <span className="sm:hidden">Buy</span><span className="hidden sm:inline">Buy on Shopee</span>
+              <Arrow className="h-3.5 w-3.5 -rotate-45 transition-transform duration-500 ease-out-expo group-hover/btn:-translate-y-0.5 group-hover/btn:translate-x-0.5" />
+            </a>
+          )}
+        </div>
+      </div>
     </motion.li>
   );
 }
 
-/* ---------- from threads ---------- */
+/* ---------- proof: her Threads ---------- */
 
-function ThreadCard({ p, hidden }: { p: (typeof posts)[number]; hidden?: boolean }) {
+/** One of her Threads posts, shown the way Threads shows it: her words exactly as posted. */
+function ThreadsPost({ text, url, post, hidden, className = "" }: { text: string; url?: string; post?: (typeof posts)[number]; hidden?: boolean; className?: string }) {
   return (
-    <a href={p.url} target="_blank" rel="noopener" draggable={false} aria-hidden={hidden} tabIndex={hidden ? -1 : undefined}
-      className="flex w-72 shrink-0 flex-col rounded-3xl border border-milk/10 bg-milk/[0.04] p-5 transition-[transform,background-color] duration-500 ease-out-expo hover:-translate-y-1.5 hover:bg-milk/[0.08] sm:w-80">
-      <span className="text-xs text-milk/50">{p.date} · @cherrryyyii</span>
-      <p className="mt-3 flex-1 text-[15px] leading-relaxed text-milk/90">“{p.quote}”</p>
-      <div className="mt-6 flex items-end justify-between">
-        <div>
-          <CountUp to={p.likes} className="block font-display text-4xl text-blush" />
-          <span className="text-xs text-milk/50">likes · {p.shares} shares</span>
-        </div>
-        <span className="text-sm text-milk/60">↗</span>
-      </div>
+    <a href={url || THREADS} target="_blank" rel="noopener" draggable={false} aria-hidden={hidden} tabIndex={hidden ? -1 : undefined}
+      className={`flex flex-col rounded-2xl border border-ink/10 bg-white p-5 transition-[border-color,transform] duration-500 ease-out-expo hover:-translate-y-1 hover:border-ink/25 ${className}`}>
+      <span className="flex items-center gap-2.5">
+        <span className="text-[15px] font-semibold">cherrryyyii</span>
+        {post && <span className="text-[15px] text-muted">{post.date}</span>}
+        <Arrow className="ml-auto h-3.5 w-3.5 -rotate-45 text-muted" />
+      </span>
+      <p lang="ms" className="mt-3 flex-1 text-[17px] leading-snug">{text}</p>
+      {post && <span className="mt-4 text-[13px] text-muted">{post.likes.toLocaleString("en-MY")} likes · View on Threads</span>}
     </a>
-  );
-}
-
-/**
- * Real scroll container that drifts left at a constant speed. Swipe, drag or trackpad
- * take over instantly; the drift picks up again from wherever they leave it.
- * Wraps by one copy-width so the loop never ends.
- */
-function AutoScroller({ children, speed = 40 /* px per second */ }: { children: React.ReactNode; speed?: number }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const reduce = useReducedMotion();
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const track = el.firstElementChild as HTMLElement;
-    // distance from a card to the same card in the next copy = one loop period
-    const copyWidth = () => {
-      const kids = track.children as HTMLCollectionOf<HTMLElement>;
-      return kids[kids.length / 4].offsetLeft - kids[0].offsetLeft;
-    };
-    let pos = el.scrollLeft, last = performance.now(), frame = 0, idleUntil = 0;
-    const hold = (ms: number) => (idleUntil = performance.now() + ms);
-
-    // mouse drag (touch already scrolls natively)
-    let drag: { x: number; start: number; moved: boolean } | null = null;
-    const down = (e: PointerEvent) => { if (e.pointerType !== "mouse") return; drag = { x: e.clientX, start: el.scrollLeft, moved: false }; hold(1e9); };
-    const move = (e: PointerEvent) => {
-      if (!drag) return;
-      const dx = e.clientX - drag.x;
-      if (Math.abs(dx) > 4) drag.moved = true;
-      el.scrollLeft = drag.start - dx;
-    };
-    const up = () => { if (drag) hold(400); setTimeout(() => (drag = null)); };
-    const click = (e: MouseEvent) => drag?.moved && e.preventDefault(); // a drag isn't a tap on the card link
-    const user = () => hold(900); // touch / wheel: let momentum finish first
-
-    const tick = (now: number) => {
-      const dt = Math.min(now - last, 64) / 1000;
-      last = now;
-      const w = copyWidth();
-      if (now < idleUntil || reduce) {
-        pos = el.scrollLeft;
-      } else {
-        if (Math.abs(el.scrollLeft - pos) > 2) pos = el.scrollLeft; // user moved it; continue from there
-        pos += speed * dt;
-      }
-      if (pos >= w) pos -= w;
-      if (pos < 1) pos += w;
-      if (Math.abs(el.scrollLeft - pos) >= 0.5) el.scrollLeft = pos;
-      frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-
-    el.addEventListener("pointerdown", down);
-    addEventListener("pointermove", move);
-    addEventListener("pointerup", up);
-    el.addEventListener("click", click, true);
-    el.addEventListener("touchstart", user, { passive: true });
-    el.addEventListener("touchmove", user, { passive: true });
-    el.addEventListener("wheel", user, { passive: true });
-    return () => {
-      cancelAnimationFrame(frame);
-      el.removeEventListener("pointerdown", down);
-      removeEventListener("pointermove", move);
-      removeEventListener("pointerup", up);
-      el.removeEventListener("click", click, true);
-      el.removeEventListener("touchstart", user);
-      el.removeEventListener("touchmove", user);
-      el.removeEventListener("wheel", user);
-    };
-  }, [speed, reduce]);
-
-  return (
-    <div ref={ref} className="no-scrollbar cursor-grab overflow-x-auto overscroll-x-contain active:cursor-grabbing [&_a]:select-none" style={{ scrollbarWidth: "none" }}>
-      <div className="flex w-max gap-4 px-[var(--gutter)] pb-2">{children}</div>
-    </div>
   );
 }
 
 function FromThreads() {
   return (
-    <section className="overflow-hidden bg-ink py-20 text-milk">
-      <div className="wrap">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-blush/70">Jom connect</p>
-        <h2 className="max-w-3xl font-display text-[clamp(2.2rem,6vw,5.5rem)] leading-[0.98] tracking-[-0.02em]">
-          <RevealWords text="Apa yang saya kongsi kat Threads." />
-        </h2>
-        <div className="mt-6 flex flex-wrap items-center gap-4">
-          <a href={THREADS} target="_blank" rel="noopener"
-            className="group inline-flex items-center gap-2 rounded-full bg-milk px-5 py-3 font-semibold text-ink transition-colors hover:bg-blush">
-            Follow @cherrryyyii
-            <span className="transition-transform duration-500 ease-out-expo group-hover:translate-x-0.5 group-hover:-translate-y-0.5">↗</span>
-          </a>
-          <span className="text-sm text-milk/60">Rutin baru, soalan dan review, semua kat sana dulu.</span>
+    <section className="border-y border-ink/10 py-20 md:py-24">
+      <div className="wrap flex flex-wrap items-end justify-between gap-6">
+        <div>
+          <Heading>From my Threads.</Heading>
+          <p className="mt-3 max-w-md text-muted">New products, questions and reviews go up there first.</p>
         </div>
+        <a href={THREADS} target="_blank" rel="noopener" className="group inline-flex min-h-12 items-center gap-2 rounded-full border border-ink/20 px-5 font-semibold transition-colors hover:border-ink">
+          Follow @cherrryyyii <Arrow className="-rotate-45 transition-transform duration-500 ease-out-expo group-hover:translate-x-0.5" />
+        </a>
       </div>
-      <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 1, ease: EASE }}
-        className="mt-10 [mask-image:linear-gradient(90deg,transparent,#000_6%,#000_94%,transparent)]">
+      <div className="mt-10 [mask-image:linear-gradient(90deg,transparent,#000_5%,#000_95%,transparent)]">
         <AutoScroller>
           {/* 4 copies so the strip is always wider than the screen, even on ultra-wide */}
-          {[0, 1, 2, 3].map((copy) => posts.map((p) => <ThreadCard key={copy + p.url} p={p} hidden={copy > 0} />))}
+          {[0, 1, 2, 3].map((copy) => posts.map((p) => <ThreadsPost key={copy + p.url} text={p.quote} url={p.url} post={p} hidden={copy > 0} className="w-72 shrink-0 sm:w-80" />))}
         </AutoScroller>
-      </motion.div>
+      </div>
     </section>
   );
 }
@@ -676,50 +439,23 @@ function FromThreads() {
 function Reviews({ reviews, routines }: { reviews: Review[]; routines: Routine[] }) {
   return (
     <section className="wrap pt-24">
-      <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-cherry">Kata followers</p>
-      <h2 className="max-w-3xl font-display text-[clamp(2.2rem,6vw,5.5rem)] leading-[0.98] tracking-[-0.02em]">
-        <RevealWords text="Dah cuba? Ni cerita korang." />
-      </h2>
-      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-        {reviews.map((r, i) => (
-          <motion.figure key={r.id} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            transition={{ duration: 0.9, ease: EASE, delay: i * 0.08 }} className="rounded-3xl bg-blush p-6">
+      <Heading>From people who tried it.</Heading>
+      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {reviews.map((r) => (
+          <figure key={r.id} className="rounded-2xl bg-milk p-6">
             <blockquote className="text-[15px] leading-relaxed">“{r.text}”</blockquote>
-            <figcaption className="mt-5 flex items-center justify-between gap-3 text-sm">
+            <figcaption className="mt-4 flex items-center justify-between text-sm">
               <b className="font-semibold">{r.name}</b>
-              <span className="rounded-full bg-milk px-2.5 py-1 text-[11px] font-semibold text-cherry">
-                {routines.find((x) => x.id === r.routine)?.tab ?? "Rutin"}
-              </span>
+              <span className="text-muted">{routines.find((x) => x.id === r.routine)?.tab}</span>
             </figcaption>
-          </motion.figure>
+          </figure>
         ))}
       </div>
     </section>
   );
 }
 
-/** Always-there pill: jumps to the routines, then flips to "back to top" once you're past the hero. */
-function FloatingNav() {
-  const { scrollY } = useScroll();
-  const [past, setPast] = useState(false);
-  useEffect(() => scrollY.on("change", (y) => setPast(y > innerHeight * 0.9)), [scrollY]);
-  return (
-    <motion.a href={past ? "#" : "#rutin"} onClick={(e) => { if (past) { e.preventDefault(); scrollTo({ top: 0, behavior: "smooth" }); } }}
-      initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 1.4, type: "spring", stiffness: 260, damping: 22 }}
-      className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-50 flex h-12 items-center gap-2 overflow-hidden rounded-full bg-ink pl-4 pr-5 text-sm font-semibold text-milk shadow-[0_12px_30px_-8px_rgba(36,22,26,.55)] hover:bg-cherry sm:right-6"
-      aria-label={past ? "Kembali ke atas" : "Pergi ke produk"}>
-      <AnimatePresence mode="popLayout" initial={false}>
-        <motion.span key={past ? "up" : "down"} initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -24, opacity: 0 }}
-          transition={{ duration: 0.35, ease: EASE }} className="flex items-center gap-2">
-          <span className="grid h-6 w-6 place-items-center rounded-full bg-milk/15">{past ? "↑" : "↓"}</span>
-          {past ? "Atas" : "Lihat produk"}
-        </motion.span>
-      </AnimatePresence>
-    </motion.a>
-  );
-}
-
-/* ---------- about + footer ---------- */
+/* ---------- questions, about, footer ---------- */
 
 function Faq() {
   const schema = {
@@ -728,19 +464,16 @@ function Faq() {
     mainEntity: FAQ.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
   };
   return (
-    <section className="wrap grid gap-8 pt-24 md:grid-cols-[1fr_1.4fr] md:gap-16">
-      <div>
-        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-cherry">Soalan</p>
-        <h2 className="font-display text-[clamp(2.2rem,6vw,5.5rem)] leading-[0.98] tracking-[-0.02em]"><RevealWords text="Selalu orang tanya." /></h2>
-      </div>
-      <div className="border-t border-ink/15">
+    <section className="wrap grid gap-8 py-24 md:grid-cols-[1fr_1.5fr] md:gap-16">
+      <Heading>Questions.</Heading>
+      <div className="border-t border-ink/10">
         {FAQ.map((f) => (
-          <details key={f.q} className="group border-b border-ink/15">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 text-lg font-semibold [&::-webkit-details-marker]:hidden">
+          <details key={f.q} className="group border-b border-ink/10">
+            <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 py-4 text-lg font-semibold [&::-webkit-details-marker]:hidden">
               {f.q}
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-blush text-cherry transition-transform duration-500 ease-out-expo group-open:rotate-45">+</span>
+              <svg viewBox="0 0 16 16" aria-hidden className="h-4 w-4 shrink-0 text-muted transition-transform duration-500 ease-out-expo group-open:rotate-45" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M8 3v10M3 8h10" /></svg>
             </summary>
-            <p className="pb-5 pr-12 leading-relaxed text-muted">{f.a}</p>
+            <p className="max-w-prose pb-5 pr-10 leading-relaxed text-muted">{f.a}</p>
           </details>
         ))}
       </div>
@@ -750,23 +483,50 @@ function Faq() {
 }
 
 function About() {
+  const quote = posts.find((p) => p.url === ABOUT.quote);
+  const best = Math.max(...posts.map((p) => p.likes));
   return (
-    <section id="about" className="wrap grid scroll-mt-4 gap-8 py-24 md:grid-cols-[auto_1fr] md:items-center md:gap-16">
-      <motion.div initial={{ scale: 0.6, opacity: 0, rotate: -12 }} whileInView={{ scale: 1, opacity: 1, rotate: 0 }}
-        viewport={{ once: true }} transition={{ type: "spring", stiffness: 180, damping: 14 }}
-        className="grid h-40 w-40 place-items-center rounded-full bg-blush md:h-64 md:w-64 xl:h-80 xl:w-80">
-        <span className="text-center text-[11px] uppercase tracking-[0.14em] text-muted">foto<br />Cherry</span>
-      </motion.div>
-      <div>
-        <h2 className="font-display text-[clamp(2.2rem,6vw,5.5rem)] leading-none tracking-[-0.02em]"><RevealWords text="Hai, saya Cherry." /></h2>
-        <motion.p initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.3 }}
-          className="mt-5 max-w-xl text-lg leading-relaxed text-muted">
-          Saya kongsi rutin skincare dan makeup untuk kulit Malaysia yang hadap panas, lembap dan kadang-kadang jerebu. Semua produk kat
-          sini saya pakai sendiri dulu sebelum recommend.
-        </motion.p>
-        <a href={THREADS} target="_blank" rel="noopener" className="mt-6 inline-flex font-semibold text-cherry underline-offset-4 hover:underline">
-          Follow @cherrryyyii kat Threads ↗
-        </a>
+    <section id="about" className="scroll-mt-16 bg-blush">
+      <div className={`wrap grid gap-10 py-20 md:items-start md:gap-16 md:py-28 ${ABOUT.portrait ? "md:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)]" : "md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]"}`}>
+        <div>
+          {ABOUT.portrait && (
+            <div className="relative mb-8 aspect-[4/5] overflow-hidden rounded-lg">
+              <Image src={ABOUT.portrait} alt="Cherry" fill sizes="(min-width: 768px) 40vw, 100vw" className="object-cover" />
+            </div>
+          )}
+          <h2 className="text-[clamp(2.75rem,7vw,6rem)] font-bold leading-[0.95] tracking-[-0.04em]">
+            {["Hi, I’m", "Cherry."].map((line, i) => (
+              <span key={line} className="-mb-[0.14em] block overflow-hidden pb-[0.18em]">
+                <motion.span className="block" initial={{ y: "105%" }} whileInView={{ y: "0%" }} viewport={{ once: true, margin: "-15% 0px" }}
+                  transition={{ duration: 1, ease: EASE, delay: i * 0.1 }}>
+                  {line}
+                </motion.span>
+              </span>
+            ))}
+          </h2>
+        </div>
+
+        <div className="md:pt-3">
+          <p lang="ms" className="max-w-xl text-lg leading-relaxed text-ink/80 md:text-xl">{ABOUT.intro}</p>
+          {quote && (
+            <figure className="mt-10 max-w-xl border-t border-ink/15 pt-6">
+              <blockquote lang="ms" className="text-[clamp(1.5rem,2.6vw,2rem)] font-semibold leading-snug tracking-[-0.02em]">“{quote.quote}”</blockquote>
+              <figcaption className="mt-3 text-[13px] text-muted">
+                <a href={quote.url} target="_blank" rel="noopener" className="underline decoration-ink/25 underline-offset-4 hover:decoration-ink">My post, {quote.date}</a>
+                {" · "}{best.toLocaleString("en-MY")} likes on my most-liked post so far
+              </figcaption>
+            </figure>
+          )}
+          <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3">
+            <a href={THREADS} target="_blank" rel="noopener"
+              className="group inline-flex min-h-12 items-center gap-2 rounded-md bg-ink px-5 font-semibold text-milk transition-colors hover:bg-ink/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink">
+              Follow @cherrryyyii on Threads <Arrow className="h-3.5 w-3.5 -rotate-45 transition-transform duration-500 ease-out-expo group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+            </a>
+            <a href="#shop" className="inline-flex min-h-11 items-center gap-1.5 text-[15px] font-semibold text-ink/80 hover:text-ink">
+              Back to products <Arrow className="h-3.5 w-3.5 -rotate-90" />
+            </a>
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -775,13 +535,80 @@ function About() {
 function Footer() {
   return (
     <footer className="border-t border-ink/10">
-      <div className="wrap py-10 text-sm text-muted">
-        <p className="max-w-2xl"><b className="text-ink">Pendedahan afiliasi:</b> {DISCLOSURE} Saya hanya letak produk yang saya betul-betul pakai.</p>
-        <p className="mt-4 flex flex-wrap justify-between gap-2 text-xs">
-          <span>© 2026 cherrryyyii · Draf mockup, bukan laman rasmi lagi.</span>
-          <Link href="/admin" className="font-semibold hover:text-cherry">Admin ›</Link>
+      <div className="wrap grid gap-6 py-10 text-sm text-muted md:grid-cols-[auto_1fr_auto] md:items-start md:gap-12">
+        <span className="font-bold text-ink">cherrryyyii</span>
+        <p className="max-w-2xl"><b className="font-semibold text-ink">Affiliate disclosure.</b> {DISCLOSURE}</p>
+        <p className="flex gap-4 text-xs md:flex-col md:items-end md:gap-1">
+          <span>© 2026 · Draft, not live yet</span>
         </p>
       </div>
     </footer>
+  );
+}
+
+/** Endless strip at a constant speed. Moves with a sub-pixel transform (scrollLeft rounds to whole
+ *  pixels, which made it stutter); drag with mouse or finger, pauses while a card has keyboard focus. */
+function AutoScroller({ children, speed = 40 /* px per second */ }: { children: React.ReactNode; speed?: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const reduce = useReducedMotion();
+  useEffect(() => {
+    const track = ref.current;
+    if (!track) return;
+    // distance from a card to the same card in the next copy = one loop period
+    const copyWidth = () => {
+      const kids = track.children as HTMLCollectionOf<HTMLElement>;
+      return kids[kids.length / 4].offsetLeft - kids[0].offsetLeft;
+    };
+    let pos = 0, last = performance.now(), frame = 0, focused = false;
+    let drag: { x: number; start: number; moved: boolean } | null = null;
+
+    const down = (e: PointerEvent) => { drag = { x: e.clientX, start: pos, moved: false }; };
+    const move = (e: PointerEvent) => {
+      if (!drag) return;
+      const dx = e.clientX - drag.x;
+      if (Math.abs(dx) > 4) drag.moved = true;
+      if (drag.moved) pos = drag.start - dx;
+    };
+    const up = () => setTimeout(() => (drag = null)); // after the click event, so it can see `moved`
+    const click = (e: MouseEvent) => drag?.moved && e.preventDefault(); // a drag isn't a tap on the card link
+    const focusIn = () => { focused = true; track.parentElement!.scrollLeft = 0; };
+    const focusOut = () => (focused = false);
+
+    const tick = (now: number) => {
+      const dt = Math.min(now - last, 100) / 1000; // a backgrounded tab doesn't jump on return
+      last = now;
+      if (!drag && !focused && !reduce) pos += speed * dt;
+      const w = copyWidth();
+      pos = ((pos % w) + w) % w;
+      track.style.transform = `translate3d(${-pos}px,0,0)`;
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+
+    track.addEventListener("pointerdown", down);
+    addEventListener("pointermove", move);
+    addEventListener("pointerup", up);
+    addEventListener("pointercancel", up);
+    track.addEventListener("click", click, true);
+    track.addEventListener("focusin", focusIn);
+    track.addEventListener("focusout", focusOut);
+    return () => {
+      cancelAnimationFrame(frame);
+      track.removeEventListener("pointerdown", down);
+      removeEventListener("pointermove", move);
+      removeEventListener("pointerup", up);
+      removeEventListener("pointercancel", up);
+      track.removeEventListener("click", click, true);
+      track.removeEventListener("focusin", focusIn);
+      track.removeEventListener("focusout", focusOut);
+    };
+  }, [speed, reduce]);
+
+  return (
+    <div className="overflow-hidden">
+      <div ref={ref} className="flex w-max cursor-grab gap-4 px-[var(--gutter)] py-2 will-change-transform [touch-action:pan-y] active:cursor-grabbing [&_a]:select-none">
+        {children}
+      </div>
+    </div>
   );
 }

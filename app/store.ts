@@ -5,7 +5,7 @@ import { routines as DEFAULT_ROUTINES, type Review, type Routine } from "./data"
 
 // ponytail: localStorage only — edits live in the browser they're made in, no login.
 // Swap load/save for a real backend (e.g. Supabase + auth) before going live.
-const KEY = "cherry-site-v2";
+const KEY = "cherry-site-v3";
 
 export type SiteData = { routines: Routine[]; reviews: Review[] };
 
